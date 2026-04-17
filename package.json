@@ -1,0 +1,13 @@
+{
+  "name": "web-cad-onprem",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test --experimental-test-isolation=none tests/*.test.js",
+    "dev:web": "node apps/web/dev-server.js",
+    "start:api": "node apps/server/src/api-server.js",
+    "start:worker": "node apps/server/src/worker.js",
+    "start:files": "node apps/server/src/file-server.js"
+  }
+}

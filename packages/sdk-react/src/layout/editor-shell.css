@@ -1,84 +1,117 @@
 /* EditorShell — 편집기 최상위 레이아웃 */
 
-.cad-editor-shell {
+/* CSS 변수 정의 */
+.editor-shell {
+  --shell-toolbar-height: 40px;
+  --shell-statusbar-height: 24px;
+  --shell-panel-width: 200px;
+
   display: grid;
-  grid-template-columns: var(--shell-left-width, 240px) 1fr var(--shell-right-width, 280px);
-  grid-template-rows: 1fr var(--shell-statusbar-height, 28px);
-  grid-template-areas:
-    "left  viewport right"
-    "left  statusbar right";
+  grid-template-rows: var(--shell-toolbar-height) 1fr var(--shell-statusbar-height);
+  grid-template-columns: var(--shell-panel-width) 1fr var(--shell-panel-width);
   width: 100%;
   height: 100%;
-  min-height: 0;
-  background: #0f172a;
-  color: #e2e8f0;
+  box-sizing: border-box;
   font-family: system-ui, sans-serif;
-  overflow: hidden;
+  font-size: 13px;
 }
 
 /* 패널 없을 때 컬럼 축소 */
-.cad-editor-shell[data-left-panel="false"] {
-  grid-template-columns: 0 1fr var(--shell-right-width, 280px);
+.editor-shell[data-left-panel="false"] {
+  grid-template-columns: 0 1fr var(--shell-panel-width, 200px);
 }
-.cad-editor-shell[data-right-panel="false"] {
-  grid-template-columns: var(--shell-left-width, 240px) 1fr 0;
+.editor-shell[data-right-panel="false"] {
+  grid-template-columns: var(--shell-panel-width, 200px) 1fr 0;
 }
-.cad-editor-shell[data-left-panel="false"][data-right-panel="false"] {
+.editor-shell[data-left-panel="false"][data-right-panel="false"] {
   grid-template-columns: 0 1fr 0;
 }
 
-/* ── 영역별 스타일 ── */
-.cad-editor-shell__left {
-  grid-area: left;
-  background: #1e293b;
-  border-right: 1px solid rgba(148, 163, 184, 0.12);
-  overflow-y: auto;
-  overflow-x: hidden;
-  min-width: 0;
-}
-
-.cad-editor-shell__viewport {
-  grid-area: viewport;
-  position: relative;
-  overflow: hidden;
-  background: #0f172a;
-  min-width: 0;
-  min-height: 0;
-}
-
-.cad-editor-shell__right {
-  grid-area: right;
-  background: #1e293b;
-  border-left: 1px solid rgba(148, 163, 184, 0.12);
-  overflow-y: auto;
-  overflow-x: hidden;
-  min-width: 0;
-}
-
-.cad-editor-shell__statusbar {
-  grid-area: statusbar;
+/* ── Toolbar ── */
+.editor-shell__toolbar {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
-  padding: 0 0.75rem;
-  gap: 1rem;
-  background: #0f172a;
-  border-top: 1px solid rgba(148, 163, 184, 0.12);
-  font-size: 0.72rem;
-  color: #64748b;
-  white-space: nowrap;
-  overflow: hidden;
-  min-width: 0;
+  padding: 0 8px;
+  border-bottom: 1px solid #ccc;
+  background: #fafafa;
+  gap: 8px;
 }
 
-/* 2D CAD 모드 */
-.cad-editor-shell[data-view-mode="2d-cad"] .cad-editor-shell__viewport {
+.editor-shell__toolbar-title {
+  font-weight: 600;
+  margin-right: 16px;
+}
+
+.editor-shell__toolbar-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.editor-shell__toolbar-actions button {
+  padding: 4px 10px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.editor-shell__toolbar-actions button:hover {
+  background: #e5e5e5;
+}
+
+/* ── Body (panels + viewport) ── */
+.editor-shell__body {
+  display: grid;
+  grid-template-columns: var(--shell-panel-width) 1fr var(--shell-panel-width);
+  grid-column: 1 / -1;
+  overflow: hidden;
+}
+
+/* ── Panels ── */
+.editor-shell__panel {
+  border-right: 1px solid #e5e5e5;
+  background: #fafafa;
+  overflow: auto;
+  padding: 8px;
+}
+
+.editor-shell__panel--right {
+  border-right: none;
+  border-left: 1px solid #e5e5e5;
+}
+
+/* ── Viewport ── */
+.editor-shell__viewport {
+  overflow: hidden;
+  background: #ffffff;
+  display: flex;
+  align-items: stretch;
+}
+
+/* 2D CAD 모드 — 크로스헤어 커서 */
+.editor-shell[data-view-mode="2d-cad"] .editor-shell__viewport {
   cursor: crosshair;
 }
 
-/* 포인트클라우드 모드 */
-.cad-editor-shell[data-view-mode="point-cloud"] .cad-editor-shell__viewport {
+/* 포인트클라우드 모드 — 잡기 커서 */
+.editor-shell[data-view-mode="point-cloud"] .editor-shell__viewport {
   cursor: grab;
 }
-.cad-editor-shell[data-view-mode="point-cloud"] .cad-editor-shell__viewport:active {
+.editor-shell[data-view-mode="point-cloud"] .editor-shell__viewport:active {
   cursor: grabbing;
+}
+
+/* ── Statusbar ── */
+.editor-shell__statusbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 8px;
+  border-top: 1px solid #ccc;
+  background: #f0f0f0;
+  font-size: 12px;
+  color: #555;
 }

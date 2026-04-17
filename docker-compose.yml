@@ -1,0 +1,47 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["node", "apps/server/src/api-server.js"]
+    environment:
+      PORT: 4010
+      WEB_CAD_JWT_SECRET: ${WEB_CAD_JWT_SECRET:-change-me}
+      WEB_CAD_JWT_ISSUER: ${WEB_CAD_JWT_ISSUER:-web-cad-onprem}
+      WEB_CAD_STORAGE_ROOT_CONTAINER: ${WEB_CAD_STORAGE_ROOT_CONTAINER:-/app/storage}
+    ports:
+      - "4010:4010"
+    volumes:
+      - type: bind
+        source: ${WEB_CAD_STORAGE_ROOT_HOST:-./data}
+        target: ${WEB_CAD_STORAGE_ROOT_CONTAINER:-/app/storage}
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["node", "apps/server/src/worker.js"]
+    environment:
+      WEB_CAD_JWT_SECRET: ${WEB_CAD_JWT_SECRET:-change-me}
+      WEB_CAD_JWT_ISSUER: ${WEB_CAD_JWT_ISSUER:-web-cad-onprem}
+      WEB_CAD_STORAGE_ROOT_CONTAINER: ${WEB_CAD_STORAGE_ROOT_CONTAINER:-/app/storage}
+    volumes:
+      - type: bind
+        source: ${WEB_CAD_STORAGE_ROOT_HOST:-./data}
+        target: ${WEB_CAD_STORAGE_ROOT_CONTAINER:-/app/storage}
+
+  files:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["node", "apps/server/src/file-server.js"]
+    environment:
+      FILE_SERVER_PORT: 4011
+      WEB_CAD_STORAGE_ROOT_CONTAINER: ${WEB_CAD_STORAGE_ROOT_CONTAINER:-/app/storage}
+    ports:
+      - "4011:4011"
+    volumes:
+      - type: bind
+        source: ${WEB_CAD_STORAGE_ROOT_HOST:-./data}
+        target: ${WEB_CAD_STORAGE_ROOT_CONTAINER:-/app/storage}
+        read_only: true

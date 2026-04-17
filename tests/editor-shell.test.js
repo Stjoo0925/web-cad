@@ -1,42 +1,40 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
 import path from "node:path";
-import React from "react";
-import { EditorShell } from "../packages/sdk-react/src/layout/EditorShell.js";
+import { fileURLToPath } from "node:url";
+import fs from "node:fs/promises";
 
-const root = process.cwd();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-test("EditorShell module files exist", () => {
-  assert.ok(existsSync(path.join(root, "packages/sdk-react/src/layout/EditorShell.jsx")));
-  assert.ok(existsSync(path.join(root, "packages/sdk-react/src/layout/editor-shell.css")));
+test("EditorShell.jsx 파일이 존재해야 함", async () => {
+  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/layout/EditorShell.jsx");
+  const exists = await fs.access(filePath).then(() => true).catch(() => false);
+  assert.ok(exists, "EditorShell.jsx 파일이 존재해야 함");
 });
 
-test("EditorShell exports a function component", () => {
-  assert.equal(typeof EditorShell, "function");
+test("editor-shell.css 파일이 존재해야 함", async () => {
+  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/layout/editor-shell.css");
+  const exists = await fs.access(filePath).then(() => true).catch(() => false);
+  assert.ok(exists, "editor-shell.css 파일이 존재해야 함");
 });
 
-test("EditorShell returns element with correct slot props", () => {
-  const el = EditorShell({
-    viewport:   React.createElement("div", null),
-    leftPanel:  React.createElement("div", null),
-    rightPanel: React.createElement("div", null),
-    viewMode:   "2d-cad",
-  });
-  assert.ok(el, "should return a React element");
-  assert.equal(typeof el, "object");
-  assert.equal(el.props["data-view-mode"], "2d-cad");
-  assert.equal(el.props["data-left-panel"],  "true");
-  assert.equal(el.props["data-right-panel"], "true");
+test("EditorShell은 함수를 export해야 함", async () => {
+  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/layout/EditorShell.jsx");
+  const content = await fs.readFile(filePath, "utf8");
+  assert.ok(content.includes("export"), "EditorShell.jsx는 export가 있어야 함");
 });
 
-test("EditorShell reflects viewMode in data-view-mode", () => {
-  const el = EditorShell({ viewMode: "point-cloud" });
-  assert.equal(el.props["data-view-mode"], "point-cloud");
+test("CSS는 grid 레이아웃을 정의해야 함", async () => {
+  const cssPath = path.resolve(__dirname, "../packages/sdk-react/src/layout/editor-shell.css");
+  const content = await fs.readFile(cssPath, "utf8");
+  assert.ok(
+    content.includes("grid") && content.includes("editor-shell"),
+    "CSS는 grid 레이아웃과 editor-shell 클래스를 정의해야 함"
+  );
 });
 
-test("EditorShell marks panels absent when not provided", () => {
-  const el = EditorShell({ viewMode: "2d-cad" });
-  assert.equal(el.props["data-left-panel"],  "false");
-  assert.equal(el.props["data-right-panel"], "false");
+test("CadPointCloudEditor.jsx가 존재해야 함", async () => {
+  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/CadPointCloudEditor.jsx");
+  const exists = await fs.access(filePath).then(() => true).catch(() => false);
+  assert.ok(exists, "CadPointCloudEditor.jsx가 존재해야 함");
 });

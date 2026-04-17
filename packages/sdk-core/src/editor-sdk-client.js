@@ -77,6 +77,25 @@ export class EditorSdkClient {
     this.#emit({ type: "selection.changed", entityIds: [...entityIds] });
   }
 
+  async closeDocument(documentId) {
+    this.#emit({ type: "document.status", status: "closing", documentId });
+    this.currentSelection = [];
+    this.#emit({ type: "document.closed", documentId });
+  }
+
+  setTool(tool) {
+    this.currentTool = tool;
+    this.#emit({ type: "tool.changed", tool });
+  }
+
+  zoomToFit(documentId) {
+    this.#emit({ type: "viewport.zoomToFit", documentId });
+  }
+
+  async upload({ documentId, assetType, fileName, content }) {
+    return this.uploadAsset({ documentId, assetType, fileName, content });
+  }
+
   reportAutosave(status, documentId) {
     this.#emit({ type: "save.status", status, documentId });
   }

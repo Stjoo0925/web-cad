@@ -1,0 +1,84 @@
+/* EditorShell — 편집기 최상위 레이아웃 */
+
+.cad-editor-shell {
+  display: grid;
+  grid-template-columns: var(--shell-left-width, 240px) 1fr var(--shell-right-width, 280px);
+  grid-template-rows: 1fr var(--shell-statusbar-height, 28px);
+  grid-template-areas:
+    "left  viewport right"
+    "left  statusbar right";
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: system-ui, sans-serif;
+  overflow: hidden;
+}
+
+/* 패널 없을 때 컬럼 축소 */
+.cad-editor-shell[data-left-panel="false"] {
+  grid-template-columns: 0 1fr var(--shell-right-width, 280px);
+}
+.cad-editor-shell[data-right-panel="false"] {
+  grid-template-columns: var(--shell-left-width, 240px) 1fr 0;
+}
+.cad-editor-shell[data-left-panel="false"][data-right-panel="false"] {
+  grid-template-columns: 0 1fr 0;
+}
+
+/* ── 영역별 스타일 ── */
+.cad-editor-shell__left {
+  grid-area: left;
+  background: #1e293b;
+  border-right: 1px solid rgba(148, 163, 184, 0.12);
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
+}
+
+.cad-editor-shell__viewport {
+  grid-area: viewport;
+  position: relative;
+  overflow: hidden;
+  background: #0f172a;
+  min-width: 0;
+  min-height: 0;
+}
+
+.cad-editor-shell__right {
+  grid-area: right;
+  background: #1e293b;
+  border-left: 1px solid rgba(148, 163, 184, 0.12);
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
+}
+
+.cad-editor-shell__statusbar {
+  grid-area: statusbar;
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  gap: 1rem;
+  background: #0f172a;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  font-size: 0.72rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* 2D CAD 모드 */
+.cad-editor-shell[data-view-mode="2d-cad"] .cad-editor-shell__viewport {
+  cursor: crosshair;
+}
+
+/* 포인트클라우드 모드 */
+.cad-editor-shell[data-view-mode="point-cloud"] .cad-editor-shell__viewport {
+  cursor: grab;
+}
+.cad-editor-shell[data-view-mode="point-cloud"] .cad-editor-shell__viewport:active {
+  cursor: grabbing;
+}

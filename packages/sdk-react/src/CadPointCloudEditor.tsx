@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useMemo } from "react";
 import { CadCanvasLayer } from "./canvas/CadCanvasLayer.js";
 import { ExportDialog } from "./components/ExportDialog.js";
 import type { Viewport, Point } from "./canvas/cad-canvas-renderer.js";
@@ -248,7 +248,11 @@ function ToolButton({
         padding: "4px 8px",
         border: "none",
         borderRadius: "4px",
-        background: disabled ? "#333" : active ? COLORS.accent : COLORS.buttonBg,
+        background: disabled
+          ? "#333"
+          : active
+            ? COLORS.accent
+            : COLORS.buttonBg,
         color: disabled ? "#666" : COLORS.text,
         cursor: disabled ? "not-allowed" : "pointer",
         minWidth: "50px",
@@ -258,7 +262,11 @@ function ToolButton({
     >
       {icon}
       <span
-        style={{ marginTop: "2px", fontSize: "9px", color: disabled ? "#666" : COLORS.textDim }}
+        style={{
+          marginTop: "2px",
+          fontSize: "9px",
+          color: disabled ? "#666" : COLORS.textDim,
+        }}
       >
         {label}
       </span>
@@ -479,10 +487,32 @@ export function CadPointCloudEditor({
   const [showLayers, setShowLayers] = useState(true);
   const [cursorWorld, setCursorWorld] = useState({ x: 0, y: 0 });
   const [showExport, setShowExport] = useState(false);
-  const [layers, setLayers] = useState<Array<{ name: string; visible?: boolean; locked?: boolean }>>([
+  const [layers, setLayers] = useState<
+    Array<{ name: string; visible?: boolean; locked?: boolean }>
+  >([
     { name: "0", visible: true, locked: false },
     { name: "Layer1", visible: true, locked: false },
   ]);
+
+  // Filter entities by layer visibility
+  const visibleEntities = useMemo(() => {
+    const visibleLayerNames = new Set(
+      layers.filter((l) => l.visible !== false).map((l) => l.name),
+    );
+    return entities.filter((e) => visibleLayerNames.has(e.layer ?? "0"));
+  }, [entities, layers]);
+
+  // Filter out locked layers from selection
+  const selectableEntityIds = useMemo(() => {
+    const unlockedLayerNames = new Set(
+      layers.filter((l) => l.locked !== true).map((l) => l.name),
+    );
+    return new Set(
+      entities
+        .filter((e) => unlockedLayerNames.has(e.layer ?? "0"))
+        .map((e) => e.id),
+    );
+  }, [entities, layers]);
   const [activeLayer, setActiveLayer] = useState<string | null>("0");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -510,9 +540,13 @@ export function CadPointCloudEditor({
     setSelectedIds([]);
   }, []);
 
-  const handleEntityCreate = useCallback((type: string, entity: Entity) => {
-    setEntities((prev) => [...prev, entity]);
-  }, []);
+  const handleEntityCreate = useCallback(
+    (type: string, entity: Entity) => {
+      const entityWithLayer = { ...entity, layer: activeLayer ?? "0" };
+      setEntities((prev) => [...prev, entityWithLayer]);
+    },
+    [activeLayer],
+  );
 
   const clearEntities = useCallback(() => {
     setEntities([]);
@@ -521,27 +555,48 @@ export function CadPointCloudEditor({
 
   const handleAddLayer = useCallback(() => {
     const newName = `Layer_${layers.length + 1}`;
-    setLayers((prev) => [...prev, { name: newName, visible: true, locked: false }]);
+    setLayers((prev) => [
+      ...prev,
+      { name: newName, visible: true, locked: false },
+    ]);
     setActiveLayer(newName);
   }, [layers.length]);
 
-  const handleDeleteLayer = useCallback((name: string) => {
-    if (name === "0") return;
-    setLayers((prev) => prev.filter((l) => l.name !== name));
-    setEntities((prev) => prev.map((e) => e.layer === name ? { ...e, layer: "0" } : e));
-    if (activeLayer === name) setActiveLayer("0");
-  }, [activeLayer]);
+  const handleDeleteLayer = useCallback(
+    (name: string) => {
+      if (name === "0") return;
+      setLayers((prev) => prev.filter((l) => l.name !== name));
+      setEntities((prev) =>
+        prev.map((e) => (e.layer === name ? { ...e, layer: "0" } : e)),
+      );
+      if (activeLayer === name) setActiveLayer("0");
+    },
+    [activeLayer],
+  );
 
-  const handleToggleLayerVisibility = useCallback((name: string, visible: boolean) => {
-    setLayers((prev) => prev.map((l) => l.name === name ? { ...l, visible } : l));
-  }, []);
+  const handleToggleLayerVisibility = useCallback(
+    (name: string, visible: boolean) => {
+      setLayers((prev) =>
+        prev.map((l) => (l.name === name ? { ...l, visible } : l)),
+      );
+    },
+    [],
+  );
 
   const handleToggleLayerLock = useCallback((name: string, locked: boolean) => {
-    setLayers((prev) => prev.map((l) => l.name === name ? { ...l, locked } : l));
+    setLayers((prev) =>
+      prev.map((l) => (l.name === name ? { ...l, locked } : l)),
+    );
   }, []);
 
   const handleLayerSelect = useCallback((name: string) => {
     setActiveLayer(name);
+  }, []);
+
+  const handleEntityUpdate = useCallback((updatedEntity: Entity) => {
+    setEntities((prev) =>
+      prev.map((e) => (e.id === updatedEntity.id ? updatedEntity : e)),
+    );
   }, []);
 
   const resetView = useCallback(() => {
@@ -632,13 +687,28 @@ export function CadPointCloudEditor({
         }
         case "select": {
           // Select tool always uses raw worldPos directly (never snap for selection)
-          const hitEntity = hitTestEntities(entities, worldPos, viewport);
-          setSelectedIds(hitEntity ? [hitEntity.id] : []);
+          const hitEntity = hitTestEntities(
+            visibleEntities,
+            worldPos,
+            viewport,
+          );
+          if (hitEntity && selectableEntityIds.has(hitEntity.id)) {
+            setSelectedIds([hitEntity.id]);
+          } else {
+            setSelectedIds([]);
+          }
           break;
         }
       }
     },
-    [currentTool, entities, handleEntityCreate, snapEnabled, viewport],
+    [
+      currentTool,
+      visibleEntities,
+      handleEntityCreate,
+      snapEnabled,
+      viewport,
+      selectableEntityIds,
+    ],
   );
 
   // Handle canvas double-click for polyline close
@@ -934,7 +1004,7 @@ export function CadPointCloudEditor({
             }}
           >
             <CadCanvasLayer
-              entities={entities}
+              entities={visibleEntities}
               viewport={viewport}
               onViewportChange={handleViewportChange}
               onMouseMove={handleCanvasMouseMove}
@@ -958,7 +1028,10 @@ export function CadPointCloudEditor({
           >
             {selectedIds.length > 0 ? (
               <PropertiesPanel
-                selectedEntity={entities.find((e) => e.id === selectedIds[0]) ?? null}
+                selectedEntity={
+                  entities.find((e) => e.id === selectedIds[0]) ?? null
+                }
+                onEntityUpdate={handleEntityUpdate}
               />
             ) : (
               <div
@@ -971,10 +1044,24 @@ export function CadPointCloudEditor({
                   padding: "8px",
                 }}
               >
-                <div style={{ marginBottom: "8px", fontSize: "11px", color: COLORS.textDim, textAlign: "center", padding: "20px" }}>
+                <div
+                  style={{
+                    marginBottom: "8px",
+                    fontSize: "11px",
+                    color: COLORS.textDim,
+                    textAlign: "center",
+                    padding: "20px",
+                  }}
+                >
                   No selection
                 </div>
-                <div style={{ marginTop: "auto", fontSize: "10px", color: COLORS.textDim }}>
+                <div
+                  style={{
+                    marginTop: "auto",
+                    fontSize: "10px",
+                    color: COLORS.textDim,
+                  }}
+                >
                   <div>Entities: {entities.length}</div>
                   <div>Zoom: {(viewport.zoom * 100).toFixed(0)}%</div>
                 </div>

@@ -25,6 +25,7 @@ export interface Entity {
   closed?: boolean;
   color?: string;
   lineWidth?: number;
+  layer?: string;
   [key: string]: unknown;
 }
 

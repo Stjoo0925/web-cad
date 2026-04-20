@@ -8,7 +8,16 @@ import { LocalStorageService } from "../../../packages/core/src/storage/local-st
 import { resolveStorageRoot } from "../../../packages/core/src/storage/storage-path-config.js";
 import { AssetIngestWorker } from "../../../packages/core/src/workers/asset-ingest-worker.js";
 
-export async function createRuntime({ rootDir } = {}) {
+export interface Runtime {
+  rootDir: string;
+  storage: InstanceType<typeof LocalStorageService>;
+  tokenService: InstanceType<typeof TokenService>;
+  documentService: InstanceType<typeof DxfDocumentService>;
+  sessionManager: InstanceType<typeof CollaborationSessionManager>;
+  ingestWorker: InstanceType<typeof AssetIngestWorker>;
+}
+
+export async function createRuntime({ rootDir }: { rootDir?: string } = {}): Promise<Runtime> {
   const resolvedRootDir = resolveStorageRoot({
     rootDir,
     cwd: path.resolve(process.cwd())

@@ -28,7 +28,11 @@ services:
       - db_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${WEB_CAD_DB_USER:-postgres} -d ${WEB_CAD_DB_NAME:-webcad}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${WEB_CAD_DB_USER:-postgres} -d ${WEB_CAD_DB_NAME:-webcad}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -43,7 +47,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: webcad-api
-    command: ["node", "apps/server/src/api-server.js"]
+    command: ["node", "apps/server/src/api-server.ts"]
     environment:
       PORT: 4010
       NODE_ENV: production
@@ -141,7 +145,7 @@ services:
       dockerfile: Dockerfile.web
     container_name: webcad-web
     ports:
-      - "${WEB_CAD_WEB_PORT:-3000}:3000"
+      - "${WEB_CAD_WEB_PORT:-3001}:3000"
     depends_on:
       api:
         condition: service_healthy

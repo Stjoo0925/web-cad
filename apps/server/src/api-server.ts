@@ -2,31 +2,31 @@ import crypto from "node:crypto";
 import http from "node:http";
 import path from "node:path";
 
-import { createRuntime } from "./create-runtime.js";
+import { createRuntime, type Runtime } from "./create-runtime.js";
 
-function jsonResponse(response, statusCode, payload) {
+function jsonResponse(response: http.ServerResponse, statusCode: number, payload: object): void {
   response.writeHead(statusCode, { "content-type": "application/json" });
   response.end(JSON.stringify(payload));
 }
 
-async function readJson(request) {
-  const buffers = [];
+async function readJson(request: http.IncomingMessage): Promise<object> {
+  const buffers: Buffer[] = [];
   for await (const chunk of request) {
-    buffers.push(chunk);
+    buffers.push(chunk as Buffer);
   }
   const content = Buffer.concat(buffers).toString("utf8");
   return content ? JSON.parse(content) : {};
 }
 
-async function readBuffer(request) {
-  const buffers = [];
+async function readBuffer(request: http.IncomingMessage): Promise<Buffer> {
+  const buffers: Buffer[] = [];
   for await (const chunk of request) {
-    buffers.push(chunk);
+    buffers.push(chunk as Buffer);
   }
   return Buffer.concat(buffers);
 }
 
-function bearerToken(request) {
+function bearerToken(request: http.IncomingMessage): string | null {
   const header = request.headers.authorization;
   if (!header?.startsWith("Bearer ")) {
     return null;
@@ -34,16 +34,16 @@ function bearerToken(request) {
   return header.slice("Bearer ".length);
 }
 
-function parseUrl(request) {
-  return new URL(request.url, `http://${request.headers.host}`);
+function parseUrl(request: http.IncomingMessage): URL {
+  return new URL(request.url ?? "/", `http://${request.headers.host}`);
 }
 
-function routeMatch(pathname, expression) {
+function routeMatch(pathname: string, expression: RegExp): Record<string, string> | null {
   const match = pathname.match(expression);
-  return match ? match.groups ?? {} : null;
+  return match ? (match.groups as Record<string, string> ?? {}) : null;
 }
 
-function createSseSession(response) {
+function createSseSession(response: http.ServerResponse): void {
   response.writeHead(200, {
     "content-type": "text/event-stream",
     "cache-control": "no-cache",
@@ -52,16 +52,20 @@ function createSseSession(response) {
   response.write("\n");
 }
 
-const runtime = await createRuntime({
+interface SseClient {
+  response: http.ServerResponse;
+}
+
+const runtime: Runtime = await createRuntime({
   rootDir: path.resolve(process.cwd(), "data")
 });
 
-const sseClients = new Map();
+const sseClients = new Map<string, SseClient[]>();
 
 runtime.sessionManager.subscribe((event) => {
   const clients = sseClients.get(event.documentId) ?? [];
-  for (const response of clients) {
-    response.write(`data: ${JSON.stringify(event)}\n\n`);
+  for (const client of clients) {
+    client.response.write(`data: ${JSON.stringify(event)}\n\n`);
   }
 });
 
@@ -78,13 +82,13 @@ const server = http.createServer(async (request, response) => {
     }
 
     if (request.method === "POST" && pathname === "/api/tokens/issue") {
-      const body = await readJson(request);
-      const token = runtime.tokenService.issueToken(body);
+      const body = await readJson(request) as { userId?: string };
+      const token = runtime.tokenService.issueToken({ userId: body.userId ?? "anonymous" });
       return jsonResponse(response, 200, { token });
     }
 
     if (request.method === "POST" && pathname === "/api/documents") {
-      const body = await readJson(request);
+      const body = await readJson(request) as { documentId?: string; pointCloudReference?: string };
       const documentId = body.documentId ?? crypto.randomUUID();
       await runtime.documentService.createDocument({
         documentId,
@@ -110,14 +114,14 @@ const server = http.createServer(async (request, response) => {
     if (request.method === "GET" && streamParams) {
       createSseSession(response);
       const clients = sseClients.get(streamParams.documentId) ?? [];
-      clients.push(response);
+      clients.push({ response });
       sseClients.set(streamParams.documentId, clients);
 
       request.on("close", () => {
         const current = sseClients.get(streamParams.documentId) ?? [];
         sseClients.set(
           streamParams.documentId,
-          current.filter((candidate) => candidate !== response)
+          current.filter((candidate) => candidate.response !== response)
         );
       });
       return;
@@ -150,7 +154,7 @@ const server = http.createServer(async (request, response) => {
       /^\/api\/documents\/(?<documentId>[^/]+)\/entities\/(?<entityId>[^/]+)\/checkout$/u
     );
     if (request.method === "POST" && checkoutParams) {
-      const payload = runtime.tokenService.verifyToken(bearerToken(request) ?? "");
+      const payload = runtime.tokenService.verifyToken(bearerToken(request) ?? "") as { userId: string };
       const checkout = runtime.sessionManager.beginEntityEdit({
         documentId: checkoutParams.documentId,
         entityId: checkoutParams.entityId,
@@ -164,7 +168,7 @@ const server = http.createServer(async (request, response) => {
       /^\/api\/documents\/(?<documentId>[^/]+)\/entities\/(?<entityId>[^/]+)\/draft$/u
     );
     if (request.method === "POST" && draftParams) {
-      const payload = runtime.tokenService.verifyToken(bearerToken(request) ?? "");
+      const payload = runtime.tokenService.verifyToken(bearerToken(request) ?? "") as { userId: string };
       const draft = await readJson(request);
       const event = runtime.sessionManager.publishDraft({
         documentId: draftParams.documentId,
@@ -180,8 +184,8 @@ const server = http.createServer(async (request, response) => {
       /^\/api\/documents\/(?<documentId>[^/]+)\/entities\/(?<entityId>[^/]+)\/commit$/u
     );
     if (request.method === "POST" && commitParams) {
-      const payload = runtime.tokenService.verifyToken(bearerToken(request) ?? "");
-      const body = await readJson(request);
+      const payload = runtime.tokenService.verifyToken(bearerToken(request) ?? "") as { userId: string };
+      const body = await readJson(request) as { entity?: object };
       const commitEvent = runtime.sessionManager.commitEntityEdit({
         documentId: commitParams.documentId,
         entityId: commitParams.entityId,
@@ -206,7 +210,7 @@ const server = http.createServer(async (request, response) => {
       /^\/api\/documents\/(?<documentId>[^/]+)\/entities\/(?<entityId>[^/]+)\/cancel$/u
     );
     if (request.method === "POST" && cancelParams) {
-      const payload = runtime.tokenService.verifyToken(bearerToken(request) ?? "");
+      const payload = runtime.tokenService.verifyToken(bearerToken(request) ?? "") as { userId: string };
       const event = runtime.sessionManager.cancelEntityEdit({
         documentId: cancelParams.documentId,
         entityId: cancelParams.entityId,
@@ -217,7 +221,7 @@ const server = http.createServer(async (request, response) => {
 
     return jsonResponse(response, 404, { error: "Not found" });
   } catch (error) {
-    return jsonResponse(response, 500, { error: error.message });
+    return jsonResponse(response, 500, { error: (error as Error).message });
   }
 });
 

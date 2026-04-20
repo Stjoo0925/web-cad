@@ -141,13 +141,13 @@ services:
   # =====================================================================
   web:
     build:
-      context: ./apps/web
-      dockerfile: Dockerfile.web
+      context: .
+      dockerfile: ./apps/web/Dockerfile.web
       args:
         VITE_NAVER_MAP_CLIENT_ID: ${VITE_NAVER_MAP_CLIENT_ID:-}
     container_name: webcad-web
     ports:
-      - "${WEB_CAD_WEB_PORT:-3001}:3000"
+      - "${WEB_CAD_WEB_PORT:-3010}:3000"
     environment:
       VITE_NAVER_MAP_CLIENT_ID: ${VITE_NAVER_MAP_CLIENT_ID:-}
     depends_on:

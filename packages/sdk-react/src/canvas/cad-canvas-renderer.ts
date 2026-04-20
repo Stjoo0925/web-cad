@@ -47,6 +47,42 @@ export type Linetype =
   | "CENTER"
   | "BORDER";
 
+/**
+ * 선 종류별 대시 패턴 (선 길이, 공백 길이) - 픽셀 단위
+ */
+const LINETYPE_PATTERNS: Record<Linetype, number[]> = {
+  CONTINUOUS: [],
+  DASHED: [12, 6],
+  DASHDOT: [12, 4, 2, 4],
+  DOT: [2, 4],
+  CENTER: [16, 4, 2, 4],
+  BORDER: [12, 4, 2, 4],
+};
+
+/**
+ * Canvas에 선 종류 패턴을 설정
+ */
+function setLinetypeRender(
+  ctx: CanvasRenderingContext2D,
+  linetype: Linetype | undefined,
+  lineWidth: number,
+): void {
+  if (!linetype || linetype === "CONTINUOUS") {
+    ctx.setLineDash([]);
+    return;
+  }
+
+  const pattern = LINETYPE_PATTERNS[linetype];
+  if (!pattern) {
+    ctx.setLineDash([]);
+    return;
+  }
+
+  // 선 두께에 따라 패턴 스케일 조정
+  const scale = Math.max(1, lineWidth / 1);
+  ctx.setLineDash(pattern.map((v) => v * scale));
+}
+
 export interface GridOptions {
   width: number;
   height: number;
@@ -152,11 +188,13 @@ function renderLine(
   const start = worldToScreen(entity.start, viewport);
   const end = worldToScreen(entity.end, viewport);
   ctx.strokeStyle = entity.color ?? "#333333";
-  ctx.lineWidth = entity.lineWidth ?? 1;
+  ctx.lineWidth = (entity.lineWidth ?? 1) * viewport.zoom;
+  setLinetypeRender(ctx, entity.linetype, ctx.lineWidth);
   ctx.beginPath();
   ctx.moveTo(start.x, start.y);
   ctx.lineTo(end.x, end.y);
   ctx.stroke();
+  ctx.setLineDash([]);
 }
 
 function renderPolyline(
@@ -166,7 +204,8 @@ function renderPolyline(
 ) {
   if (!entity.vertices || entity.vertices.length === 0) return;
   ctx.strokeStyle = entity.color ?? "#333333";
-  ctx.lineWidth = entity.lineWidth ?? 1;
+  ctx.lineWidth = (entity.lineWidth ?? 1) * viewport.zoom;
+  setLinetypeRender(ctx, entity.linetype, ctx.lineWidth);
   ctx.lineJoin = "round";
   ctx.beginPath();
   const first = worldToScreen(entity.vertices[0], viewport);
@@ -177,6 +216,7 @@ function renderPolyline(
   }
   if (entity.closed) ctx.closePath();
   ctx.stroke();
+  ctx.setLineDash([]);
 }
 
 function renderCircle(
@@ -188,10 +228,12 @@ function renderCircle(
   const center = worldToScreen(entity.center, viewport);
   const radius = entity.radius * viewport.zoom;
   ctx.strokeStyle = entity.color ?? "#333333";
-  ctx.lineWidth = entity.lineWidth ?? 1;
+  ctx.lineWidth = (entity.lineWidth ?? 1) * viewport.zoom;
+  setLinetypeRender(ctx, entity.linetype, ctx.lineWidth);
   ctx.beginPath();
   ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
   ctx.stroke();
+  ctx.setLineDash([]);
 }
 
 function renderArc(
@@ -205,7 +247,8 @@ function renderArc(
   const startAngle = ((entity.startAngle ?? 0) * Math.PI) / 180;
   const endAngle = ((entity.endAngle ?? 360) * Math.PI) / 180;
   ctx.strokeStyle = entity.color ?? "#333333";
-  ctx.lineWidth = entity.lineWidth ?? 1;
+  ctx.lineWidth = (entity.lineWidth ?? 1) * viewport.zoom;
+  setLinetypeRender(ctx, entity.linetype, ctx.lineWidth);
   ctx.beginPath();
   ctx.arc(center.x, center.y, radius, startAngle, endAngle);
   ctx.stroke();

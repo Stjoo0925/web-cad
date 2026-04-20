@@ -8,13 +8,13 @@ RUN apk add --no-cache curl
 ARG VITE_NAVER_MAP_CLIENT_ID
 ENV VITE_NAVER_MAP_CLIENT_ID=$VITE_NAVER_MAP_CLIENT_ID
 
-# Copy package files only
+# Copy root package files for workspace
 COPY package.json package-lock.json* ./
 
-# Install dependencies inside container (Linux binaries)
+# Install all dependencies (workspace + apps/web)
 RUN npm ci
 
-# Copy source code
+# Copy all source code
 COPY . .
 
 EXPOSE 3000

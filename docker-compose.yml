@@ -141,8 +141,8 @@ services:
   # =====================================================================
   web:
     build:
-      context: ./apps/web
-      dockerfile: Dockerfile.web
+      context: .
+      dockerfile: ./apps/web/Dockerfile.web
       args:
         VITE_NAVER_MAP_CLIENT_ID: ${VITE_NAVER_MAP_CLIENT_ID:-}
     container_name: webcad-web

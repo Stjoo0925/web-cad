@@ -1214,7 +1214,25 @@ export function CadPointCloudEditor({
                 cursor: "pointer",
               }}
             >
-              Export
+              Export PNG
+            </button>
+            <button
+              onClick={() => {
+                import("./export/dxf-exporter.js").then(({ exportToDxf }) => {
+                  exportToDxf(entities, { filename: "cad-export" });
+                });
+              }}
+              style={{
+                padding: "4px 12px",
+                border: "none",
+                borderRadius: "4px",
+                background: "#006400",
+                color: COLORS.text,
+                fontSize: "11px",
+                cursor: "pointer",
+              }}
+            >
+              Export DXF
             </button>
           </div>
         </div>

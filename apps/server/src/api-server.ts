@@ -119,8 +119,32 @@ const server = http.createServer(async (request, response) => {
       return jsonResponse(response, 200, {
         documentId: documentIdParams.documentId,
         pointCloudReference: sidecar.pointCloudReference,
+        originalFileName: sidecar.originalFileName ?? null,
+        sourceFormat: sidecar.sourceFormat ?? null,
+        importedAt: sidecar.importedAt ?? null,
+        entityCount: sidecar.entityCount ?? (sidecar.events as CollaborationEvent[]).filter((e) => e.type === "entity.commit.applied").length,
+        parseWarnings: sidecar.parseWarnings ?? [],
+        snapshots: sidecar.snapshots,
         events: sidecar.events.length,
         dxfContent
+      });
+    }
+
+    const importDxfParams = routeMatch(pathname, /^\/api\/documents\/(?<documentId>[^/]+)\/import-dxf$/u);
+    if (request.method === "POST" && importDxfParams) {
+      runtime.tokenService.verifyToken(bearerToken(request) ?? "");
+      const fileName = (typeof request.headers["x-file-name"] === "string" ? request.headers["x-file-name"] : "import.dxf") as string;
+      const content = await readBuffer(request);
+      const dxfContent = content.toString("utf8");
+      const result = await runtime.documentService.importDxf({
+        documentId: importDxfParams.documentId,
+        dxfContent,
+        originalFileName: fileName
+      });
+      return jsonResponse(response, 201, {
+        documentId: importDxfParams.documentId,
+        entityCount: result.entityCount,
+        warnings: result.warnings
       });
     }
 

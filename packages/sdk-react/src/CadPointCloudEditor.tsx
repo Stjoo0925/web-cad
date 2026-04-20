@@ -1,13 +1,9 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useMemo } from "react";
 import { CadCanvasLayer } from "./canvas/CadCanvasLayer.js";
 import { ExportDialog } from "./components/ExportDialog.js";
 import type { Viewport, Point } from "./canvas/cad-canvas-renderer.js";
 import type { Entity } from "./canvas/cad-canvas-renderer.js";
-import {
-  createSnapEngine,
-  SNAP_TYPES,
-  type SnapResult,
-} from "./tools/snap-engine.js";
+import { createSnapEngine } from "./tools/snap-engine.js";
 import { createCircleTool } from "./tools/circle-tool.js";
 import { createArcTool } from "./tools/arc-tool.js";
 import { createTextTool } from "./tools/text-tool.js";
@@ -15,6 +11,8 @@ import { createPointTool } from "./tools/point-tool.js";
 import { createLineTool } from "./tools/line-tool.js";
 import { createPolylineTool } from "./tools/polyline-tool.js";
 import { hitTestEntities } from "./tools/select-tool.js";
+import { LayersPanel } from "./panels/LayersPanel.js";
+import { PropertiesPanel } from "./panels/PropertiesPanel.js";
 
 export interface CadPointCloudEditorProps {
   baseUrl?: string;
@@ -227,17 +225,22 @@ function ToolButton({
   active,
   shortcut,
   onClick,
+  disabled,
+  title,
 }: {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
   shortcut?: string;
   onClick: () => void;
+  disabled?: boolean;
+  title?: string;
 }) {
   return (
     <button
       onClick={onClick}
-      title={`${label}${shortcut ? ` (${shortcut})` : ""}`}
+      title={title || `${label}${shortcut ? ` (${shortcut})` : ""}`}
+      disabled={disabled}
       style={{
         display: "flex",
         flexDirection: "column",
@@ -245,16 +248,25 @@ function ToolButton({
         padding: "4px 8px",
         border: "none",
         borderRadius: "4px",
-        background: active ? COLORS.accent : COLORS.buttonBg,
-        color: COLORS.text,
-        cursor: "pointer",
+        background: disabled
+          ? "#333"
+          : active
+            ? COLORS.accent
+            : COLORS.buttonBg,
+        color: disabled ? "#666" : COLORS.text,
+        cursor: disabled ? "not-allowed" : "pointer",
         minWidth: "50px",
         fontSize: "10px",
+        opacity: disabled ? 0.5 : 1,
       }}
     >
       {icon}
       <span
-        style={{ marginTop: "2px", fontSize: "9px", color: COLORS.textDim }}
+        style={{
+          marginTop: "2px",
+          fontSize: "9px",
+          color: disabled ? "#666" : COLORS.textDim,
+        }}
       >
         {label}
       </span>
@@ -475,6 +487,33 @@ export function CadPointCloudEditor({
   const [showLayers, setShowLayers] = useState(true);
   const [cursorWorld, setCursorWorld] = useState({ x: 0, y: 0 });
   const [showExport, setShowExport] = useState(false);
+  const [layers, setLayers] = useState<
+    Array<{ name: string; visible?: boolean; locked?: boolean }>
+  >([
+    { name: "0", visible: true, locked: false },
+    { name: "Layer1", visible: true, locked: false },
+  ]);
+
+  // Filter entities by layer visibility
+  const visibleEntities = useMemo(() => {
+    const visibleLayerNames = new Set(
+      layers.filter((l) => l.visible !== false).map((l) => l.name),
+    );
+    return entities.filter((e) => visibleLayerNames.has(e.layer ?? "0"));
+  }, [entities, layers]);
+
+  // Filter out locked layers from selection
+  const selectableEntityIds = useMemo(() => {
+    const unlockedLayerNames = new Set(
+      layers.filter((l) => l.locked !== true).map((l) => l.name),
+    );
+    return new Set(
+      entities
+        .filter((e) => unlockedLayerNames.has(e.layer ?? "0"))
+        .map((e) => e.id),
+    );
+  }, [entities, layers]);
+  const [activeLayer, setActiveLayer] = useState<string | null>("0");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Tool instances
@@ -501,13 +540,63 @@ export function CadPointCloudEditor({
     setSelectedIds([]);
   }, []);
 
-  const handleEntityCreate = useCallback((type: string, entity: Entity) => {
-    setEntities((prev) => [...prev, entity]);
-  }, []);
+  const handleEntityCreate = useCallback(
+    (type: string, entity: Entity) => {
+      const entityWithLayer = { ...entity, layer: activeLayer ?? "0" };
+      setEntities((prev) => [...prev, entityWithLayer]);
+    },
+    [activeLayer],
+  );
 
   const clearEntities = useCallback(() => {
     setEntities([]);
     setSelectedIds([]);
+  }, []);
+
+  const handleAddLayer = useCallback(() => {
+    const newName = `Layer_${layers.length + 1}`;
+    setLayers((prev) => [
+      ...prev,
+      { name: newName, visible: true, locked: false },
+    ]);
+    setActiveLayer(newName);
+  }, [layers.length]);
+
+  const handleDeleteLayer = useCallback(
+    (name: string) => {
+      if (name === "0") return;
+      setLayers((prev) => prev.filter((l) => l.name !== name));
+      setEntities((prev) =>
+        prev.map((e) => (e.layer === name ? { ...e, layer: "0" } : e)),
+      );
+      if (activeLayer === name) setActiveLayer("0");
+    },
+    [activeLayer],
+  );
+
+  const handleToggleLayerVisibility = useCallback(
+    (name: string, visible: boolean) => {
+      setLayers((prev) =>
+        prev.map((l) => (l.name === name ? { ...l, visible } : l)),
+      );
+    },
+    [],
+  );
+
+  const handleToggleLayerLock = useCallback((name: string, locked: boolean) => {
+    setLayers((prev) =>
+      prev.map((l) => (l.name === name ? { ...l, locked } : l)),
+    );
+  }, []);
+
+  const handleLayerSelect = useCallback((name: string) => {
+    setActiveLayer(name);
+  }, []);
+
+  const handleEntityUpdate = useCallback((updatedEntity: Entity) => {
+    setEntities((prev) =>
+      prev.map((e) => (e.id === updatedEntity.id ? updatedEntity : e)),
+    );
   }, []);
 
   const resetView = useCallback(() => {
@@ -556,9 +645,13 @@ export function CadPointCloudEditor({
   // Handle canvas click based on current tool
   const handleCanvasClick = useCallback(
     (worldPos: Point) => {
-      const snapEngine = snapEngineRef.current;
-      const snapResult = snapEngine.findSnapPoint(worldPos, entities);
-      const point = snapResult ? snapResult.point : worldPos;
+      // Only apply snap if snap is enabled
+      let point = worldPos;
+      if (snapEnabled) {
+        const snapEngine = snapEngineRef.current;
+        const snapResult = snapEngine.findSnapPoint(worldPos, entities);
+        point = snapResult ? snapResult.point : worldPos;
+      }
 
       switch (currentTool) {
         case "line": {
@@ -593,10 +686,13 @@ export function CadPointCloudEditor({
           break;
         }
         case "select": {
-          // Use proper hitTestEntities from select-tool.ts
-          const screenPoint = { x: point.x, y: point.y };
-          const hitEntity = hitTestEntities(entities, screenPoint, viewport);
-          if (hitEntity) {
+          // Select tool always uses raw worldPos directly (never snap for selection)
+          const hitEntity = hitTestEntities(
+            visibleEntities,
+            worldPos,
+            viewport,
+          );
+          if (hitEntity && selectableEntityIds.has(hitEntity.id)) {
             setSelectedIds([hitEntity.id]);
           } else {
             setSelectedIds([]);
@@ -605,7 +701,14 @@ export function CadPointCloudEditor({
         }
       }
     },
-    [currentTool, entities, handleEntityCreate],
+    [
+      currentTool,
+      visibleEntities,
+      handleEntityCreate,
+      snapEnabled,
+      viewport,
+      selectableEntityIds,
+    ],
   );
 
   // Handle canvas double-click for polyline close
@@ -745,22 +848,28 @@ export function CadPointCloudEditor({
               icon={<Icons.Move />}
               label="Move"
               shortcut="M"
-              active={currentTool === "move"}
-              onClick={() => handleToolClick("move")}
+              active={false}
+              onClick={() => {}}
+              disabled
+              title="Not yet implemented"
             />
             <ToolButton
               icon={<Icons.Rotate />}
               label="Rotate"
               shortcut="RO"
-              active={currentTool === "rotate"}
-              onClick={() => handleToolClick("rotate")}
+              active={false}
+              onClick={() => {}}
+              disabled
+              title="Not yet implemented"
             />
             <ToolButton
               icon={<Icons.Scale />}
               label="Scale"
               shortcut="SC"
-              active={currentTool === "scale"}
-              onClick={() => handleToolClick("scale")}
+              active={false}
+              onClick={() => {}}
+              disabled
+              title="Not yet implemented"
             />
 
             <div
@@ -868,22 +977,15 @@ export function CadPointCloudEditor({
                 <Icons.Layers />
                 Layers
               </div>
-              <div style={{ flex: 1, overflow: "auto", padding: "4px" }}>
-                {["0", "Layer1", "Layer2", "Defpoints"].map((layer) => (
-                  <div
-                    key={layer}
-                    style={{
-                      padding: "6px 8px",
-                      fontSize: "11px",
-                      color: COLORS.text,
-                      borderRadius: "3px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <span style={{ opacity: 0.7 }}>●</span> {layer}
-                  </div>
-                ))}
-              </div>
+              <LayersPanel
+                layers={layers}
+                activeLayer={activeLayer}
+                onLayerSelect={handleLayerSelect}
+                onToggleVisibility={handleToggleLayerVisibility}
+                onToggleLock={handleToggleLayerLock}
+                onAddLayer={handleAddLayer}
+                onDeleteLayer={handleDeleteLayer}
+              />
             </div>
           )}
 
@@ -902,7 +1004,7 @@ export function CadPointCloudEditor({
             }}
           >
             <CadCanvasLayer
-              entities={entities}
+              entities={visibleEntities}
               viewport={viewport}
               onViewportChange={handleViewportChange}
               onMouseMove={handleCanvasMouseMove}
@@ -924,46 +1026,27 @@ export function CadPointCloudEditor({
               flexDirection: "column",
             }}
           >
-            <div
-              style={{
-                padding: "8px 12px",
-                borderBottom: `1px solid ${COLORS.border}`,
-                color: COLORS.text,
-                fontSize: "12px",
-                fontWeight: 600,
-              }}
-            >
-              Properties
-            </div>
-            <div style={{ flex: 1, overflow: "auto", padding: "8px" }}>
-              {selectedIds.length > 0 ? (
-                <div style={{ fontSize: "11px", color: COLORS.textDim }}>
-                  <div style={{ marginBottom: "8px" }}>
-                    <span style={{ color: COLORS.text }}>Selected:</span>{" "}
-                    {selectedIds.length}
-                  </div>
-                  {entities
-                    .filter((e) => selectedIds.includes(e.id))
-                    .map((e) => (
-                      <div
-                        key={e.id}
-                        style={{
-                          padding: "4px 0",
-                          borderBottom: `1px solid ${COLORS.border}`,
-                        }}
-                      >
-                        <div style={{ color: COLORS.accent }}>{e.type}</div>
-                        <div
-                          style={{ fontSize: "10px", color: COLORS.textDim }}
-                        >
-                          ID: {e.id.slice(0, 8)}...
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              ) : (
+            {selectedIds.length > 0 ? (
+              <PropertiesPanel
+                selectedEntity={
+                  entities.find((e) => e.id === selectedIds[0]) ?? null
+                }
+                onEntityUpdate={handleEntityUpdate}
+              />
+            ) : (
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  fontSize: "11px",
+                  color: COLORS.textDim,
+                  padding: "8px",
+                }}
+              >
                 <div
                   style={{
+                    marginBottom: "8px",
                     fontSize: "11px",
                     color: COLORS.textDim,
                     textAlign: "center",
@@ -972,18 +1055,18 @@ export function CadPointCloudEditor({
                 >
                   No selection
                 </div>
-              )}
-              <div
-                style={{
-                  marginTop: "16px",
-                  fontSize: "10px",
-                  color: COLORS.textDim,
-                }}
-              >
-                <div>Entities: {entities.length}</div>
-                <div>Zoom: {(viewport.zoom * 100).toFixed(0)}%</div>
+                <div
+                  style={{
+                    marginTop: "auto",
+                    fontSize: "10px",
+                    color: COLORS.textDim,
+                  }}
+                >
+                  <div>Entities: {entities.length}</div>
+                  <div>Zoom: {(viewport.zoom * 100).toFixed(0)}%</div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 

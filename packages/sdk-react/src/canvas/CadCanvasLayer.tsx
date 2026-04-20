@@ -55,11 +55,16 @@ export function CadCanvasLayer({
   const viewportWrapperRef = useRef<HTMLDivElement>(null);
 
   // Sync canvas ref to parent when available
-  const syncCanvasRef = useCallback((el: HTMLCanvasElement | null) => {
-    if (canvasRefProp) {
-      (canvasRefProp as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
-    }
-  }, [canvasRefProp]);
+  const syncCanvasRef = useCallback(
+    (el: HTMLCanvasElement | null) => {
+      if (canvasRefProp) {
+        (
+          canvasRefProp as React.MutableRefObject<HTMLCanvasElement | null>
+        ).current = el;
+      }
+    },
+    [canvasRefProp],
+  );
 
   const viewport = viewportProp ?? {
     width: 800,
@@ -272,16 +277,19 @@ export function CadCanvasLayer({
         }}
         onPointerDown={handlePointerDown}
       >
-      <canvas
-        ref={(el) => { canvasRef.current = el; syncCanvasRef(el); }}
-        style={{
-          display: "block",
-          width: "100%",
-          height: "100%",
-          cursor: "crosshair",
-        }}
-      />
-    </div>
+        <canvas
+          ref={(el) => {
+            canvasRef.current = el;
+            syncCanvasRef(el);
+          }}
+          style={{
+            display: "block",
+            width: "100%",
+            height: "100%",
+            cursor: "crosshair",
+          }}
+        />
+      </div>
     </>
   );
 }

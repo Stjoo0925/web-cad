@@ -26,3 +26,35 @@ export type {
   ScaleCommandResult,
   ScaleCommandOptions,
 } from "./scale-command.js";
+
+export { createCopyCommand, applyCopyOffset } from "./copy-command.js";
+export type {
+  CopyCommand,
+  CopyCommandState,
+  CopyCommandResult,
+  CopyCommandOptions,
+} from "./copy-command.js";
+
+export { createTrimCommand } from "./trim-command.js";
+export type {
+  TrimCommand,
+  TrimCommandState,
+  TrimCommandResult,
+  TrimCommandOptions,
+} from "./trim-command.js";
+
+export { createExtendCommand } from "./extend-command.js";
+export type {
+  ExtendCommand,
+  ExtendCommandState,
+  ExtendCommandResult,
+  ExtendCommandOptions,
+} from "./extend-command.js";
+
+export { createOffsetCommand, applyOffsetTransform } from "./offset-command.js";
+export type {
+  OffsetCommand,
+  OffsetCommandState,
+  OffsetCommandResult,
+  OffsetCommandOptions,
+} from "./offset-command.js";

@@ -20,6 +20,8 @@ export interface CadCanvasLayerProps {
   entities?: Entity[];
   viewport?: Viewport;
   onViewportChange?: (viewport: Viewport) => void;
+  /** 캔버스 ref를 부모에 노출하여 export 등에 활용 */
+  canvasRef?: React.RefObject<HTMLCanvasElement>;
   /** 스냅 기능 활성화 여부 */
   snapEnabled?: boolean;
   /** Ortho 모드 활성화 여부 */
@@ -40,6 +42,7 @@ export function CadCanvasLayer({
   entities = [],
   viewport: viewportProp,
   onViewportChange,
+  canvasRef: canvasRefProp,
   snapEnabled = true,
   orthoEnabled = false,
   onMouseMove,
@@ -50,6 +53,13 @@ export function CadCanvasLayer({
 }: CadCanvasLayerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewportWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Sync canvas ref to parent when available
+  const syncCanvasRef = useCallback((el: HTMLCanvasElement | null) => {
+    if (canvasRefProp) {
+      (canvasRefProp as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
+    }
+  }, [canvasRefProp]);
 
   const viewport = viewportProp ?? {
     width: 800,
@@ -263,7 +273,7 @@ export function CadCanvasLayer({
         onPointerDown={handlePointerDown}
       >
       <canvas
-        ref={canvasRef}
+        ref={(el) => { canvasRef.current = el; syncCanvasRef(el); }}
         style={{
           display: "block",
           width: "100%",

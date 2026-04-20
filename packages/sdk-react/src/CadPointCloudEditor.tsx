@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { CadCanvasLayer } from "./canvas/CadCanvasLayer.js";
+import { ExportDialog } from "./components/ExportDialog.js";
 import type { Viewport, Point } from "./canvas/cad-canvas-renderer.js";
 import type { Entity } from "./canvas/cad-canvas-renderer.js";
 import {
@@ -471,6 +472,8 @@ export function CadPointCloudEditor({
   const [showGrid, setShowGrid] = useState(true);
   const [showLayers, setShowLayers] = useState(true);
   const [cursorWorld, setCursorWorld] = useState({ x: 0, y: 0 });
+  const [showExport, setShowExport] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Tool instances
   const circleToolRef = useRef(createCircleTool({}));
@@ -816,6 +819,20 @@ export function CadPointCloudEditor({
             >
               Reset View
             </button>
+            <button
+              onClick={() => setShowExport(true)}
+              style={{
+                padding: "4px 12px",
+                border: "none",
+                borderRadius: "4px",
+                background: "#006400",
+                color: COLORS.text,
+                fontSize: "11px",
+                cursor: "pointer",
+              }}
+            >
+              Export
+            </button>
           </div>
         </div>
 
@@ -894,6 +911,7 @@ export function CadPointCloudEditor({
               onClick={handleCanvasClick}
               onDoubleClick={handleCanvasDoubleClick}
               selectedIds={selectedIds}
+              canvasRef={canvasRef}
             />
             <SnapOverlay snap={snapIndicator} viewport={viewport} />
           </div>

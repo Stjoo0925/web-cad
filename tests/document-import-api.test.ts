@@ -38,3 +38,22 @@ test("스냅샷 생성 함수(createSnapshot)가 이미 존재해야 함", async
   const content = await fs.readFile(filePath, "utf8");
   assert.ok(content.includes("createSnapshot"), "createSnapshot 함수가 이미 존재해야 함");
 });
+
+// API 서버는 GET /api/documents/:id에 parseWarnings, snapshots, entityCount를 반환해야 함
+test("GET /api/documents/:id는 parseWarnings, snapshots, entityCount를 반환해야 함", async () => {
+  const filePath = path.resolve(__dirname, "../apps/server/src/api-server.ts");
+  const content = await fs.readFile(filePath, "utf8");
+  assert.ok(content.includes("parseWarnings"), "parseWarnings 필드가 있어야 함");
+  assert.ok(content.includes("snapshots"), "snapshots 필드가 있어야 함");
+  assert.ok(content.includes("entityCount"), "entityCount 필드가 있어야 함");
+  assert.ok(content.includes("originalFileName"), "originalFileName 필드가 있어야 함");
+  assert.ok(content.includes("sourceFormat"), "sourceFormat 필드가 있어야 함");
+});
+
+// API 서버는 POST /api/documents/:id/import-dxf 엔드포인트를 지원해야 함
+test("POST /api/documents/:id/import-dxf 엔드포인트가 있어야 함", async () => {
+  const filePath = path.resolve(__dirname, "../apps/server/src/api-server.ts");
+  const content = await fs.readFile(filePath, "utf8");
+  assert.ok(content.includes("import-dxf"), "import-dxf 경로가 있어야 함");
+  assert.ok(content.includes("importDxf"), "documentService.importDxf 호출이 있어야 함");
+});

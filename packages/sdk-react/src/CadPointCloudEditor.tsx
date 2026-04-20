@@ -11,6 +11,8 @@ import { createPointTool } from "./tools/point-tool.js";
 import { createLineTool } from "./tools/line-tool.js";
 import { createPolylineTool } from "./tools/polyline-tool.js";
 import { hitTestEntities } from "./tools/select-tool.js";
+import { LayersPanel } from "./panels/LayersPanel.js";
+import { PropertiesPanel } from "./panels/PropertiesPanel.js";
 
 export interface CadPointCloudEditorProps {
   baseUrl?: string;
@@ -223,17 +225,22 @@ function ToolButton({
   active,
   shortcut,
   onClick,
+  disabled,
+  title,
 }: {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
   shortcut?: string;
   onClick: () => void;
+  disabled?: boolean;
+  title?: string;
 }) {
   return (
     <button
       onClick={onClick}
-      title={`${label}${shortcut ? ` (${shortcut})` : ""}`}
+      title={title || `${label}${shortcut ? ` (${shortcut})` : ""}`}
+      disabled={disabled}
       style={{
         display: "flex",
         flexDirection: "column",
@@ -241,16 +248,17 @@ function ToolButton({
         padding: "4px 8px",
         border: "none",
         borderRadius: "4px",
-        background: active ? COLORS.accent : COLORS.buttonBg,
-        color: COLORS.text,
-        cursor: "pointer",
+        background: disabled ? "#333" : active ? COLORS.accent : COLORS.buttonBg,
+        color: disabled ? "#666" : COLORS.text,
+        cursor: disabled ? "not-allowed" : "pointer",
         minWidth: "50px",
         fontSize: "10px",
+        opacity: disabled ? 0.5 : 1,
       }}
     >
       {icon}
       <span
-        style={{ marginTop: "2px", fontSize: "9px", color: COLORS.textDim }}
+        style={{ marginTop: "2px", fontSize: "9px", color: disabled ? "#666" : COLORS.textDim }}
       >
         {label}
       </span>
@@ -471,6 +479,11 @@ export function CadPointCloudEditor({
   const [showLayers, setShowLayers] = useState(true);
   const [cursorWorld, setCursorWorld] = useState({ x: 0, y: 0 });
   const [showExport, setShowExport] = useState(false);
+  const [layers, setLayers] = useState<Array<{ name: string; visible?: boolean; locked?: boolean }>>([
+    { name: "0", visible: true, locked: false },
+    { name: "Layer1", visible: true, locked: false },
+  ]);
+  const [activeLayer, setActiveLayer] = useState<string | null>("0");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Tool instances
@@ -504,6 +517,31 @@ export function CadPointCloudEditor({
   const clearEntities = useCallback(() => {
     setEntities([]);
     setSelectedIds([]);
+  }, []);
+
+  const handleAddLayer = useCallback(() => {
+    const newName = `Layer_${layers.length + 1}`;
+    setLayers((prev) => [...prev, { name: newName, visible: true, locked: false }]);
+    setActiveLayer(newName);
+  }, [layers.length]);
+
+  const handleDeleteLayer = useCallback((name: string) => {
+    if (name === "0") return;
+    setLayers((prev) => prev.filter((l) => l.name !== name));
+    setEntities((prev) => prev.map((e) => e.layer === name ? { ...e, layer: "0" } : e));
+    if (activeLayer === name) setActiveLayer("0");
+  }, [activeLayer]);
+
+  const handleToggleLayerVisibility = useCallback((name: string, visible: boolean) => {
+    setLayers((prev) => prev.map((l) => l.name === name ? { ...l, visible } : l));
+  }, []);
+
+  const handleToggleLayerLock = useCallback((name: string, locked: boolean) => {
+    setLayers((prev) => prev.map((l) => l.name === name ? { ...l, locked } : l));
+  }, []);
+
+  const handleLayerSelect = useCallback((name: string) => {
+    setActiveLayer(name);
   }, []);
 
   const resetView = useCallback(() => {
@@ -740,22 +778,28 @@ export function CadPointCloudEditor({
               icon={<Icons.Move />}
               label="Move"
               shortcut="M"
-              active={currentTool === "move"}
-              onClick={() => handleToolClick("move")}
+              active={false}
+              onClick={() => {}}
+              disabled
+              title="Not yet implemented"
             />
             <ToolButton
               icon={<Icons.Rotate />}
               label="Rotate"
               shortcut="RO"
-              active={currentTool === "rotate"}
-              onClick={() => handleToolClick("rotate")}
+              active={false}
+              onClick={() => {}}
+              disabled
+              title="Not yet implemented"
             />
             <ToolButton
               icon={<Icons.Scale />}
               label="Scale"
               shortcut="SC"
-              active={currentTool === "scale"}
-              onClick={() => handleToolClick("scale")}
+              active={false}
+              onClick={() => {}}
+              disabled
+              title="Not yet implemented"
             />
 
             <div
@@ -863,22 +907,15 @@ export function CadPointCloudEditor({
                 <Icons.Layers />
                 Layers
               </div>
-              <div style={{ flex: 1, overflow: "auto", padding: "4px" }}>
-                {["0", "Layer1", "Layer2", "Defpoints"].map((layer) => (
-                  <div
-                    key={layer}
-                    style={{
-                      padding: "6px 8px",
-                      fontSize: "11px",
-                      color: COLORS.text,
-                      borderRadius: "3px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <span style={{ opacity: 0.7 }}>●</span> {layer}
-                  </div>
-                ))}
-              </div>
+              <LayersPanel
+                layers={layers}
+                activeLayer={activeLayer}
+                onLayerSelect={handleLayerSelect}
+                onToggleVisibility={handleToggleLayerVisibility}
+                onToggleLock={handleToggleLayerLock}
+                onAddLayer={handleAddLayer}
+                onDeleteLayer={handleDeleteLayer}
+              />
             </div>
           )}
 
@@ -919,66 +956,30 @@ export function CadPointCloudEditor({
               flexDirection: "column",
             }}
           >
-            <div
-              style={{
-                padding: "8px 12px",
-                borderBottom: `1px solid ${COLORS.border}`,
-                color: COLORS.text,
-                fontSize: "12px",
-                fontWeight: 600,
-              }}
-            >
-              Properties
-            </div>
-            <div style={{ flex: 1, overflow: "auto", padding: "8px" }}>
-              {selectedIds.length > 0 ? (
-                <div style={{ fontSize: "11px", color: COLORS.textDim }}>
-                  <div style={{ marginBottom: "8px" }}>
-                    <span style={{ color: COLORS.text }}>Selected:</span>{" "}
-                    {selectedIds.length}
-                  </div>
-                  {entities
-                    .filter((e) => selectedIds.includes(e.id))
-                    .map((e) => (
-                      <div
-                        key={e.id}
-                        style={{
-                          padding: "4px 0",
-                          borderBottom: `1px solid ${COLORS.border}`,
-                        }}
-                      >
-                        <div style={{ color: COLORS.accent }}>{e.type}</div>
-                        <div
-                          style={{ fontSize: "10px", color: COLORS.textDim }}
-                        >
-                          ID: {e.id.slice(0, 8)}...
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <div
-                  style={{
-                    fontSize: "11px",
-                    color: COLORS.textDim,
-                    textAlign: "center",
-                    padding: "20px",
-                  }}
-                >
-                  No selection
-                </div>
-              )}
+            {selectedIds.length > 0 ? (
+              <PropertiesPanel
+                selectedEntity={entities.find((e) => e.id === selectedIds[0]) ?? null}
+              />
+            ) : (
               <div
                 style={{
-                  marginTop: "16px",
-                  fontSize: "10px",
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  fontSize: "11px",
                   color: COLORS.textDim,
+                  padding: "8px",
                 }}
               >
-                <div>Entities: {entities.length}</div>
-                <div>Zoom: {(viewport.zoom * 100).toFixed(0)}%</div>
+                <div style={{ marginBottom: "8px", fontSize: "11px", color: COLORS.textDim, textAlign: "center", padding: "20px" }}>
+                  No selection
+                </div>
+                <div style={{ marginTop: "auto", fontSize: "10px", color: COLORS.textDim }}>
+                  <div>Entities: {entities.length}</div>
+                  <div>Zoom: {(viewport.zoom * 100).toFixed(0)}%</div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 

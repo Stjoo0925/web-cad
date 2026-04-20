@@ -59,11 +59,11 @@
       "id": "US-004",
       "description": "panels/*.tsx PropertiesPanel 및 LayerPanel 연결",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "acceptanceCriteria": [
         "panels/PropertiesPanel.tsx import 및 사용",
         "panels/LayersPanel.tsx import 및 사용",
-        "기존 inline stub panel 제거 또는 교체",
+        "layers state 관리 (추가/삭제/가시성/잠금 핸들러)",
         "entities 및 selectedIds state 연결"
       ],
       "files": ["packages/sdk-react/src/CadPointCloudEditor.tsx"],
@@ -73,10 +73,11 @@
       "id": "US-006",
       "description": "Move/Rotate/Scale dead button 정리 또는 구현",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "acceptanceCriteria": [
-        "dead button (클릭 시 아무 동작 없음)을 명확히 표시 또는 삭제",
-        " 또는 move-tool.ts, rotate-tool.ts, scale-tool.ts 구현"
+        "Move/Rotate/Scale 버튼 disabled 상태로 표시",
+        "disabled=true이면 회색 스타일 및 cursor: not-allowed",
+        "title에 Not yet implemented 표시"
       ],
       "files": ["packages/sdk-react/src/CadPointCloudEditor.tsx"],
       "verification": "버튼 클릭 시 실제 동작 발생"

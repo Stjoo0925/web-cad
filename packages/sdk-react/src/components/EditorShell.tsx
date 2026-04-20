@@ -255,7 +255,7 @@ export function EditorShell({
 
   const selectedProperty: EntityProperty | null = selectedEntity
     ? {
-        id: selectedEntity.id,
+        id: selectedEntity.id!,
         type: selectedEntity.type,
         layer:
           ((selectedEntity as Record<string, unknown>).layer as string) || "0",

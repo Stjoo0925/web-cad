@@ -12,8 +12,8 @@ export interface Viewport {
 }
 
 export interface Entity {
+  id: string;
   type: string;
-  id?: string;
   position?: Point;
   start?: Point;
   end?: Point;
@@ -206,12 +206,24 @@ export function renderEntities(
       // Draw selection glow
       ctx.strokeStyle = selectedColor + "40";
       ctx.lineWidth = originalLineWidth + 6;
-      renderEntity(ctx, { ...entity, color: selectedColor + "40", lineWidth: originalLineWidth + 6 }, viewport);
+      renderEntity(
+        ctx,
+        {
+          ...entity,
+          color: selectedColor + "40",
+          lineWidth: originalLineWidth + 6,
+        },
+        viewport,
+      );
 
       // Draw selection highlight
       ctx.strokeStyle = selectedColor;
       ctx.lineWidth = originalLineWidth + 2;
-      renderEntity(ctx, { ...entity, color: selectedColor, lineWidth: originalLineWidth + 2 }, viewport);
+      renderEntity(
+        ctx,
+        { ...entity, color: selectedColor, lineWidth: originalLineWidth + 2 },
+        viewport,
+      );
 
       // Restore original
       ctx.strokeStyle = originalColor;

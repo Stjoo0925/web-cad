@@ -1,46 +1,48 @@
-export const EDITOR_TOOLS = {
-  SELECT: "select",
-  LINE: "line",
-  POLYLINE: "polyline"
-} as const;
+/**
+ * editor-store.ts
+ * Editor state store with unified contracts
+ */
+export {
+  EDITOR_TOOLS,
+  VIEW_MODES,
+  EDITOR_EVENTS,
+  type EditorToolType,
+  type ViewModeType,
+  type EditorState,
+  type EditorStore,
+  type EditorEventType,
+  type EditorEvent,
+  type Point,
+  type Viewport,
+  type Entity,
+  type EntityType,
+  type DocumentMetadata,
+  type LayerColor,
+  type Layer,
+  type LayerStateType,
+  generateEntityId,
+  createEntity,
+} from "./editor-contracts.js";
 
-export type EditorToolType = (typeof EDITOR_TOOLS)[keyof typeof EDITOR_TOOLS];
+import {
+  EDITOR_TOOLS,
+  VIEW_MODES,
+  type EditorToolType,
+  type ViewModeType,
+  type EditorState,
+  type EditorStore,
+} from "./editor-contracts.js";
 
-export const VIEW_MODES = {
-  CAD_2D: "2d-cad",
-  CAD_3D: "3d",
-  POINT_CLOUD: "point-cloud"
-} as const;
+export { createEditorStore };
 
-export type ViewModeType = (typeof VIEW_MODES)[keyof typeof VIEW_MODES];
-
-export interface EditorState {
-  tool: EditorToolType;
-  selection: string[];
-  viewMode: ViewModeType;
-  zoom: number;
-  pan: { x: number; y: number };
-  mapActive: boolean;
-}
-
-export interface EditorStore {
-  subscribe: (listener: (state: EditorState) => void) => () => void;
-  setTool: (tool: EditorToolType) => void;
-  setSelection: (entityIds: string[]) => void;
-  setViewMode: (viewMode: ViewModeType) => void;
-  setZoom: (zoom: number) => void;
-  setPan: (pan: { x: number; y: number }) => void;
-  getState: () => EditorState;
-}
-
-export function createEditorStore(): EditorStore {
+function createEditorStore(): EditorStore {
   let state: EditorState = {
     tool: EDITOR_TOOLS.SELECT,
     selection: [],
     viewMode: VIEW_MODES.CAD_2D,
     zoom: 1,
     pan: { x: 0, y: 0 },
-    mapActive: false
+    mapActive: false,
   };
 
   const listeners = new Set<(state: EditorState) => void>();
@@ -90,6 +92,6 @@ export function createEditorStore(): EditorStore {
     setViewMode,
     setZoom,
     setPan,
-    getState
+    getState,
   };
 }

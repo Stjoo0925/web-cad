@@ -16,6 +16,6 @@
     "allowJs": true,
     "types": ["node"]
   },
-  "include": ["apps/**/*"],
+  "include": ["apps/**/*", "tests/**/*", "packages/**/*"],
   "exclude": ["node_modules", "apps/web/dist", "apps/web/src", "dist"]
 }

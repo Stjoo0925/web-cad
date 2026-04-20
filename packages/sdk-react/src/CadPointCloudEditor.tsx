@@ -14,6 +14,7 @@ import { createTextTool } from "./tools/text-tool.js";
 import { createPointTool } from "./tools/point-tool.js";
 import { createLineTool } from "./tools/line-tool.js";
 import { createPolylineTool } from "./tools/polyline-tool.js";
+import { hitTestEntities } from "./tools/select-tool.js";
 
 export interface CadPointCloudEditorProps {
   baseUrl?: string;
@@ -438,7 +439,6 @@ function StatusBar({
       <div style={{ display: "flex", gap: "16px" }}>
         <span>X: {cursor.x.toFixed(2)}</span>
         <span>Y: {cursor.y.toFixed(2)}</span>
-        <span>Z: 0.00</span>
       </div>
       <div style={{ display: "flex", gap: "16px" }}>
         <span style={{ color: COLORS.accent }}>OSNAP: {snapMode}</span>
@@ -470,6 +470,8 @@ export function CadPointCloudEditor({
     null,
   );
   const [showGrid, setShowGrid] = useState(true);
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [activeTab, setActiveTab] = useState("Home");
   const [showLayers, setShowLayers] = useState(true);
   const [cursorWorld, setCursorWorld] = useState({ x: 0, y: 0 });
   const [showExport, setShowExport] = useState(false);
@@ -536,7 +538,7 @@ export function CadPointCloudEditor({
     (worldPos: Point) => {
       setCursorWorld(worldPos);
 
-      if (currentTool !== "select") {
+      if (snapEnabled && currentTool !== "select") {
         const snapEngine = snapEngineRef.current;
         const result = snapEngine.findSnapPoint(worldPos, entities);
         if (result) {
@@ -548,7 +550,7 @@ export function CadPointCloudEditor({
         setSnapIndicator(null);
       }
     },
-    [entities, currentTool],
+    [entities, currentTool, snapEnabled],
   );
 
   // Handle canvas click based on current tool
@@ -566,7 +568,8 @@ export function CadPointCloudEditor({
         }
         case "polyline": {
           const result = polylineToolRef.current.handleClick(point);
-          if (result) handleEntityCreate("POLYLINE", result as unknown as Entity);
+          if (result)
+            handleEntityCreate("POLYLINE", result as unknown as Entity);
           break;
         }
         case "circle": {
@@ -590,16 +593,9 @@ export function CadPointCloudEditor({
           break;
         }
         case "select": {
-          // Simple click selection
-          const hitEntity = entities.find((e) => {
-            const dx = (e as any).start
-              ? (e as any).start.x - point.x
-              : (e as any).position?.x - point.x || 0;
-            const dy = (e as any).start
-              ? (e as any).start.y - point.y
-              : (e as any).position?.y - point.y || 0;
-            return Math.hypot(dx, dy) < 20;
-          });
+          // Use proper hitTestEntities from select-tool.ts
+          const screenPoint = { x: point.x, y: point.y };
+          const hitEntity = hitTestEntities(entities, screenPoint, viewport);
           if (hitEntity) {
             setSelectedIds([hitEntity.id]);
           } else {
@@ -659,12 +655,14 @@ export function CadPointCloudEditor({
                 key={tab}
                 style={{
                   padding: "6px 16px",
-                  color: i === 0 ? COLORS.text : COLORS.textDim,
+                  color: activeTab === tab ? COLORS.text : COLORS.textDim,
                   fontSize: "12px",
-                  fontWeight: i === 0 ? 600 : 400,
-                  borderBottom: i === 0 ? `2px solid ${COLORS.accent}` : "none",
+                  fontWeight: activeTab === tab ? 600 : 400,
+                  borderBottom:
+                    activeTab === tab ? `2px solid ${COLORS.accent}` : "none",
                   cursor: "pointer",
                 }}
+                onClick={() => setActiveTab(tab)}
               >
                 {tab}
               </div>
@@ -784,8 +782,8 @@ export function CadPointCloudEditor({
             <ToolButton
               icon={<Icons.Snap />}
               label="Snap"
-              active={true}
-              onClick={() => {}}
+              active={snapEnabled}
+              onClick={() => setSnapEnabled(!snapEnabled)}
             />
 
             <div style={{ flex: 1 }} />

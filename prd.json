@@ -1,0 +1,85 @@
+{
+  "version": "1.0",
+  "stories": [
+    {
+      "id": "US-001",
+      "description": "Select tool hit detection 수정 — select-tool.ts의 hitTestEntities 사용",
+      "priority": 1,
+      "passes": true,
+      "acceptanceCriteria": [
+        "select-tool.ts의 hitTestEntities 함수를 CadPointCloudEditor.tsx로 import",
+        "handleCanvasClick의 select case에서 naive distance check를 hitTestEntities 호출로 교체",
+        "viewport 파라미터를 올바르게 전달 (zoom 고려)",
+        "선택된 엔티티의 id만 selectedIds에 설정"
+      ],
+      "files": ["packages/sdk-react/src/CadPointCloudEditor.tsx"],
+      "verification": "npm test 실행 시 cad-canvas-input 테스트 통과 (6/6 passed)"
+    },
+    {
+      "id": "US-002",
+      "description": "Snap toggle 버튼 동작하도록 수정",
+      "priority": 2,
+      "passes": true,
+      "acceptanceCriteria": [
+        "snapEnabled state 추가",
+        "Snap ToolButton의 active prop을 active={snapEnabled}로 변경",
+        "Snap ToolButton의 onClick을 onClick={() => setSnapEnabled(!snapEnabled)}로 변경",
+        "snapEngineRef에 snapEnabled 상태 전달"
+      ],
+      "files": ["packages/sdk-react/src/CadPointCloudEditor.tsx"],
+      "verification": "Snap 버튼 클릭 시 active 토글, snap 인디케이터 정상 작동"
+    },
+    {
+      "id": "US-003",
+      "description": "Ribbon Tab switching 연결",
+      "priority": 3,
+      "passes": true,
+      "acceptanceCriteria": [
+        "activeTab state 추가 (useState)",
+        "Tab 클릭 핸들러 onTabChange 연결",
+        "active 상태 tab 하드코딩 제거 (i === 0 대신 activeTab 사용)",
+        "tab 변경 시 UI 업데이트"
+      ],
+      "files": ["packages/sdk-react/src/CadPointCloudEditor.tsx"],
+      "verification": "Annotate, View, Manage 탭 클릭 시 highlighting 변경"
+    },
+    {
+      "id": "US-005",
+      "description": "StatusBar Z coordinate 하드코딩 제거",
+      "priority": 5,
+      "passes": true,
+      "acceptanceCriteria": [
+        "Z: 0.00 표시 제거 또는 viewport.z 또는 0 사용",
+        "2D 모드에서 불필요한 정보 제거"
+      ],
+      "files": ["packages/sdk-react/src/CadPointCloudEditor.tsx"],
+      "verification": "StatusBar에 불필요한 Z 정보 없음"
+    },
+    {
+      "id": "US-004",
+      "description": "panels/*.tsx PropertiesPanel 및 LayerPanel 연결",
+      "priority": 4,
+      "passes": false,
+      "acceptanceCriteria": [
+        "panels/PropertiesPanel.tsx import 및 사용",
+        "panels/LayersPanel.tsx import 및 사용",
+        "기존 inline stub panel 제거 또는 교체",
+        "entities 및 selectedIds state 연결"
+      ],
+      "files": ["packages/sdk-react/src/CadPointCloudEditor.tsx"],
+      "verification": "PropertiesPanel에 선택된 entity 정보 표시, LayerPanel에 레이어 목록 표시"
+    },
+    {
+      "id": "US-006",
+      "description": "Move/Rotate/Scale dead button 정리 또는 구현",
+      "priority": 6,
+      "passes": false,
+      "acceptanceCriteria": [
+        "dead button (클릭 시 아무 동작 없음)을 명확히 표시 또는 삭제",
+        " 또는 move-tool.ts, rotate-tool.ts, scale-tool.ts 구현"
+      ],
+      "files": ["packages/sdk-react/src/CadPointCloudEditor.tsx"],
+      "verification": "버튼 클릭 시 실제 동작 발생"
+    }
+  ]
+}

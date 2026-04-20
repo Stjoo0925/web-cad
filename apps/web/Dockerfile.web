@@ -2,18 +2,20 @@ FROM node:24-alpine
 
 WORKDIR /app
 
-# curl for healthcheck
 RUN apk add --no-cache curl
 
 # Build argument for NAVER Map Client ID
 ARG VITE_NAVER_MAP_CLIENT_ID
 ENV VITE_NAVER_MAP_CLIENT_ID=$VITE_NAVER_MAP_CLIENT_ID
 
-COPY . .
+# Copy package files only
+COPY package.json package-lock.json* ./
 
-# Install web app dependencies
-WORKDIR /app/apps/web
-RUN npm install
+# Install dependencies inside container (Linux binaries)
+RUN npm ci
+
+# Copy source code
+COPY . .
 
 EXPOSE 3000
 

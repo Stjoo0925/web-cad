@@ -1,13 +1,9 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { CadCanvasLayer } from "./canvas/CadCanvasLayer.js";
 import { ExportDialog } from "./components/ExportDialog.js";
 import type { Viewport, Point } from "./canvas/cad-canvas-renderer.js";
 import type { Entity } from "./canvas/cad-canvas-renderer.js";
-import {
-  createSnapEngine,
-  SNAP_TYPES,
-  type SnapResult,
-} from "./tools/snap-engine.js";
+import { createSnapEngine } from "./tools/snap-engine.js";
 import { createCircleTool } from "./tools/circle-tool.js";
 import { createArcTool } from "./tools/arc-tool.js";
 import { createTextTool } from "./tools/text-tool.js";
@@ -556,9 +552,13 @@ export function CadPointCloudEditor({
   // Handle canvas click based on current tool
   const handleCanvasClick = useCallback(
     (worldPos: Point) => {
-      const snapEngine = snapEngineRef.current;
-      const snapResult = snapEngine.findSnapPoint(worldPos, entities);
-      const point = snapResult ? snapResult.point : worldPos;
+      // Only apply snap if snap is enabled
+      let point = worldPos;
+      if (snapEnabled) {
+        const snapEngine = snapEngineRef.current;
+        const snapResult = snapEngine.findSnapPoint(worldPos, entities);
+        point = snapResult ? snapResult.point : worldPos;
+      }
 
       switch (currentTool) {
         case "line": {
@@ -593,19 +593,14 @@ export function CadPointCloudEditor({
           break;
         }
         case "select": {
-          // Use proper hitTestEntities from select-tool.ts
-          const screenPoint = { x: point.x, y: point.y };
-          const hitEntity = hitTestEntities(entities, screenPoint, viewport);
-          if (hitEntity) {
-            setSelectedIds([hitEntity.id]);
-          } else {
-            setSelectedIds([]);
-          }
+          // Select tool always uses raw worldPos directly (never snap for selection)
+          const hitEntity = hitTestEntities(entities, worldPos, viewport);
+          setSelectedIds(hitEntity ? [hitEntity.id] : []);
           break;
         }
       }
     },
-    [currentTool, entities, handleEntityCreate],
+    [currentTool, entities, handleEntityCreate, snapEnabled, viewport],
   );
 
   // Handle canvas double-click for polyline close

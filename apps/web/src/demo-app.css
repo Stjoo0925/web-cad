@@ -1,0 +1,231 @@
+/* DemoApp — 데모 애플리케이션 스타일 */
+
+.demo-app {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+}
+
+/* ── 툴바 ── */
+.demo-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  height: 44px;
+  background: #1e1e1e;
+  color: #ccc;
+  flex-shrink: 0;
+}
+
+.demo-toolbar__title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #fff;
+  margin-right: 8px;
+}
+
+.demo-toolbar__tools,
+.demo-toolbar__views,
+.demo-toolbar__actions {
+  display: flex;
+  gap: 4px;
+}
+
+.demo-toolbar__tools button,
+.demo-toolbar__views button,
+.demo-toolbar__actions button {
+  padding: 5px 12px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #2d2d2d;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.15s;
+}
+
+.demo-toolbar__tools button:hover,
+.demo-toolbar__views button:hover,
+.demo-toolbar__actions button:hover {
+  background: #3d3d3d;
+}
+
+.demo-toolbar__tools button.active,
+.demo-toolbar__views button.active {
+  background: #0d7dd4;
+  border-color: #0d7dd4;
+  color: #fff;
+}
+
+.demo-toolbar__actions button {
+  background: #0d6cb4;
+  border-color: #0d6cb4;
+  color: #fff;
+}
+
+/* ── 바디 ── */
+.demo-app__body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── 레이어 패널 ── */
+.demo-layer-panel {
+  width: 180px;
+  background: #1e1e1e;
+  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.demo-layer-panel__header {
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  color: #fff;
+  border-bottom: 1px solid #333;
+  background: #252526;
+}
+
+.demo-layer-panel__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.demo-layer-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.demo-layer-item:hover {
+  background: #2a2a2a;
+}
+
+.demo-layer-item.active {
+  background: #094771;
+}
+
+.demo-layer-item__visibility,
+.demo-layer-item__lock {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.demo-layer-item__visibility:hover,
+.demo-layer-item__lock:hover {
+  background: #3d3d3d;
+}
+
+.demo-layer-item__color {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1px solid #555;
+  flex-shrink: 0;
+}
+
+.demo-layer-item__name {
+  flex: 1;
+  font-size: 12px;
+  color: #ccc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 뷰포트 ── */
+.demo-app__viewport {
+  flex: 1;
+  overflow: hidden;
+  background: #333;
+  position: relative;
+}
+
+.demo-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── 속성 패널 ── */
+.demo-properties-panel {
+  width: 200px;
+  background: #1e1e1e;
+  border-left: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.demo-properties-panel__header {
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  color: #fff;
+  border-bottom: 1px solid #333;
+  background: #252526;
+}
+
+.demo-properties-panel__empty {
+  padding: 16px 12px;
+  color: #666;
+  font-style: italic;
+  font-size: 12px;
+}
+
+.demo-properties-panel__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.demo-properties-panel__table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid #2a2a2a;
+  color: #ccc;
+}
+
+.demo-properties-panel__table td:first-child {
+  color: #888;
+  width: 70px;
+}
+
+/* ── 스테이터스바 ── */
+.demo-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 12px;
+  height: 24px;
+  background: #007acc;
+  color: #fff;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.demo-statusbar span {
+  opacity: 0.9;
+}

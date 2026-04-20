@@ -1,84 +1,91 @@
 /**
- * HostIntegrationExample.jsx
- * 호스트 앱 통합 예제 — CadPointCloudEditor를 실제로 사용하는 예시
+ * HostIntegrationExample.tsx
+ * Host app integration example — actual usage of CadPointCloudEditor
  *
- * 문서 열림, 저장 상태, 선택 변경, 업로드 완료, 지도 오류 이벤트를 처리합니다.
- * 호스트 앱이 토큰을 공급하는 흐름을 보여줍니다.
+ * Handles document open, save status, selection change, upload complete, and map error events.
+ * Shows the flow where host app supplies the token.
  */
 
 import React, { useState, useCallback } from "react";
-import { CadPointCloudEditor } from "../../../packages/sdk-react/src/index.js";
+import { CadPointCloudEditor } from "@web-cad/sdk-react";
+
+interface EventLogEntry {
+  type: string;
+  message: string;
+  timestamp: string;
+}
+
+interface HostIntegrationExampleProps {
+  baseUrl: string;
+  token: string;
+}
 
 /**
- * HostIntegrationExample — 호스트 앱 통합 예제 컴포넌트
- *
- * @param {Object} props
- * @param {string} props.baseUrl - API 서버 URL
- * @param {string} props.token - 인증 토큰
+ * HostIntegrationExample — host app integration example component
  */
-export function HostIntegrationExample({ baseUrl, token }) {
+export function HostIntegrationExample({ baseUrl, token }: HostIntegrationExampleProps) {
   const [documentId, setDocumentId] = useState("doc-001");
-  const [eventLog, setEventLog] = useState([]);
-  const [selectedEntities, setSelectedEntities] = useState([]);
+  const [eventLog, setEventLog] = useState<EventLogEntry[]>([]);
+  const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
 
   /**
-   * 이벤트 로그에 추가
+   * Add to event log
    */
-  const addLog = useCallback((type, message) => {
+  const addLog = useCallback((type: string, message: string) => {
     setEventLog((prev) => [
       { type, message, timestamp: new Date().toLocaleTimeString() },
-      ...prev.slice(0, 49) // 최대 50개 유지
+      ...prev.slice(0, 49)
     ]);
   }, []);
 
   /**
-   * 문서 열림 이벤트 핸들러
+   * Document open event handler
    */
-  const handleDocumentOpened = useCallback((document) => {
-    addLog("document.opened", `문서 열림: ${document.id || documentId}`);
+  const handleDocumentOpened = useCallback((document: { id?: string }) => {
+    addLog("document.opened", `Document opened: ${document.id || documentId}`);
   }, [addLog, documentId]);
 
   /**
-   * 저장 상태 이벤트 핸들러
+   * Save status event handler
    */
-  const handleSaveStatus = useCallback((event) => {
-    addLog("save.status", `저장 상태: ${event.status} — ${event.documentId}`);
+  const handleSaveStatus = useCallback((event: { status: string; documentId: string }) => {
+    addLog("save.status", `Save status: ${event.status} — ${event.documentId}`);
   }, [addLog]);
 
   /**
-   * 선택 변경 이벤트 핸들러
+   * Selection change event handler
    */
-  const handleSelectionChange = useCallback((entityIds) => {
+  const handleSelectionChange = useCallback((entityIds: string[]) => {
     setSelectedEntities(entityIds);
-    addLog("selection.changed", `선택 변경: ${entityIds.length}개 엔티티`);
+    addLog("selection.changed", `Selection changed: ${entityIds.length} entities`);
   }, [addLog]);
 
   /**
-   * 업로드 완료 이벤트 핸들러
+   * Upload complete event handler
    */
-  const handleUploadCompleted = useCallback((event) => {
-    addLog("upload.completed", `업로드 완료: ${event.assetType} — ${event.fileName}`);
+  const handleUploadCompleted = useCallback((event: { assetType: string; fileName: string }) => {
+    addLog("upload.completed", `Upload complete: ${event.assetType} — ${event.fileName}`);
   }, [addLog]);
 
   /**
-   * 오류 이벤트 핸들러
+   * Error event handler
    */
-  const handleError = useCallback((event) => {
+  const handleError = useCallback((event: { type: string; message: string }) => {
     addLog("error", `${event.type}: ${event.message}`);
   }, [addLog]);
 
   return (
     <div style={styles.container}>
-      {/* 헤더 */}
+      {/* Header */}
       <div style={styles.header}>
         <h1 style={styles.title}>Web CAD Host Integration Example</h1>
-        <p style={styles.subtitle}>호스트 앱에서 CadPointCloudEditor를 사용하는 예시</p>
+        <p style={styles.subtitle}>Example of using CadPointCloudEditor from host app</p>
       </div>
 
-      {/* 설정 패널 */}
+      {/* Config panel */}
       <div style={styles.configPanel}>
         <div style={styles.configRow}>
-          <label style={styles.label}>문서 ID:</label>
+          <label style={styles.label}>Document ID:</label>
           <input
             type="text"
             value={documentId}
@@ -90,11 +97,11 @@ export function HostIntegrationExample({ baseUrl, token }) {
           <span style={styles.configLabel}>API URL:</span> {baseUrl}
         </div>
         <div style={styles.configInfo}>
-          <span style={styles.configLabel}>토큰:</span> {token ? "설정됨" : "미설정"}
+          <span style={styles.configLabel}>Token:</span> {token ? "Set" : "Not set"}
         </div>
       </div>
 
-      {/* 에디터 영역 */}
+      {/* Editor area */}
       <div style={styles.editorContainer}>
         <CadPointCloudEditor
           baseUrl={baseUrl}
@@ -109,20 +116,20 @@ export function HostIntegrationExample({ baseUrl, token }) {
         />
       </div>
 
-      {/* 이벤트 로그 */}
+      {/* Event log */}
       <div style={styles.eventLog}>
         <div style={styles.eventLogHeader}>
-          이벤트 로그 ({eventLog.length})
+          Event Log ({eventLog.length})
           <button
             onClick={() => setEventLog([])}
             style={styles.clearButton}
           >
-            초기화
+            Clear
           </button>
         </div>
         <div style={styles.eventList}>
           {eventLog.length === 0 ? (
-            <div style={styles.emptyLog}>이벤트가 없습니다...</div>
+            <div style={styles.emptyLog}>No events...</div>
           ) : (
             eventLog.map((event, index) => (
               <div
@@ -143,10 +150,10 @@ export function HostIntegrationExample({ baseUrl, token }) {
         </div>
       </div>
 
-      {/* 선택된 엔티티 정보 */}
+      {/* Selected entity info */}
       {selectedEntities.length > 0 && (
         <div style={styles.selectionInfo}>
-          선택된 엔티티: {selectedEntities.join(", ")}
+          Selected entities: {selectedEntities.join(", ")}
         </div>
       )}
     </div>
@@ -154,9 +161,9 @@ export function HostIntegrationExample({ baseUrl, token }) {
 }
 
 /**
- * 이벤트 타입별 색상 반환
+ * Return color by event type
  */
-function getEventColor(type) {
+function getEventColor(type: string): string {
   switch (type) {
     case "document.opened":
       return "#4ade80";
@@ -174,9 +181,9 @@ function getEventColor(type) {
 }
 
 /**
- * CSS 스타일
+ * CSS styles
  */
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   container: {
     display: "flex",
     flexDirection: "column",

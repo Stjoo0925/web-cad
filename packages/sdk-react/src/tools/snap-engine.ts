@@ -1,5 +1,5 @@
 /**
- * snap-engine.js
+ * snap-engine.ts
  * 스냅 기능 모듈
  *
  * 끝점, 중점, 교차점 스냅을 계산하여 스냅 포인트를 반환합니다.
@@ -21,12 +21,14 @@ export const SNAP_TYPES = {
   INTERSECTION: "intersection",
   CENTER: "center",
   NEAREST: "nearest"
-};
+} as const;
+
+export type SnapType = (typeof SNAP_TYPES)[keyof typeof SNAP_TYPES];
 
 /**
  * 스냅 타입 우선순위 (높을수록 먼저 적용)
  */
-const SNAP_PRIORITY = {
+const SNAP_PRIORITY: Record<SnapType, number> = {
   [SNAP_TYPES.ENDPOINT]: 100,
   [SNAP_TYPES.MIDPOINT]: 80,
   [SNAP_TYPES.INTERSECTION]: 90,
@@ -34,39 +36,60 @@ const SNAP_PRIORITY = {
   [SNAP_TYPES.NEAREST]: 50
 };
 
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface Entity {
+  id: string;
+  type: string;
+  start?: Point;
+  end?: Point;
+  vertices?: Point[];
+  center?: Point;
+  radius?: number;
+  startAngle?: number;
+  endAngle?: number;
+  closed?: boolean;
+  [key: string]: unknown;
+}
+
+export interface SnapResult {
+  point: Point;
+  type: SnapType;
+  distance: number;
+  priority: number;
+  entityId: string | null;
+}
+
+export interface SnapEngineOptions {
+  tolerance?: number;
+  enabledTypes?: SnapType[];
+}
+
 /**
  * 두 점 사이의 거리를 계산합니다.
- *
- * @param {Object} p1 - 점1 { x, y }
- * @param {Object} p2 - 점2 { x, y }
- * @returns {number} 거리
  */
-function distance(p1, p2) {
+function distance(p1: Point, p2: Point): number {
   return Math.hypot(p2.x - p1.x, p2.y - p1.y);
 }
 
 /**
  * 두 선분의 교차점을 계산합니다.
- *
- * @param {Object} a1 - 선분1 시작점 { x, y }
- * @param {Object} a2 - 선분1 끝점 { x, y }
- * @param {Object} b1 - 선분2 시작점 { x, y }
- * @param {Object} b2 - 선분2 끝점 { x, y }
- * @returns {Object|null} 교차점 또는 null
  */
-function lineLineIntersection(a1, a2, b1, b2) {
+function lineLineIntersection(a1: Point, a2: Point, b1: Point, b2: Point): Point | null {
   const dx1 = a2.x - a1.x;
   const dy1 = a2.y - a1.y;
   const dx2 = b2.x - b1.x;
   const dy2 = b2.y - b1.y;
 
   const denom = dx1 * dy2 - dy1 * dx2;
-  if (Math.abs(denom) < 1e-10) return null; // 평행
+  if (Math.abs(denom) < 1e-10) return null;
 
   const t = ((b1.x - a1.x) * dy2 - (b1.y - a1.y) * dx2) / denom;
   const u = ((b1.x - a1.x) * dy1 - (b1.y - a1.y) * dx1) / denom;
 
-  // 0~1 범위 내에서 교차하는지 확인
   if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
     return {
       x: a1.x + t * dx1,
@@ -79,27 +102,26 @@ function lineLineIntersection(a1, a2, b1, b2) {
 
 /**
  * 엔티티에서 끝점 스냅 포인트를 추출합니다.
- *
- * @param {Object} entity - 엔티티
- * @returns {Object[]} 스냅 포인트 배열
  */
-function getEndpointSnapPoints(entity) {
+function getEndpointSnapPoints(entity: Entity): Point[] {
   switch (entity.type) {
     case "LINE":
-      return [entity.start, entity.end];
+      return entity.start && entity.end ? [entity.start, entity.end] : [];
     case "POLYLINE":
     case "LWPOLYLINE":
       return entity.vertices ? [...entity.vertices] : [];
     case "CIRCLE":
-      // 원의 경우 네 개의 사분면 끝점
-      return [
-        { x: entity.center.x + entity.radius, y: entity.center.y },
-        { x: entity.center.x - entity.radius, y: entity.center.y },
-        { x: entity.center.x, y: entity.center.y + entity.radius },
-        { x: entity.center.x, y: entity.center.y - entity.radius }
-      ];
+      if (entity.center && entity.radius !== undefined) {
+        return [
+          { x: entity.center.x + entity.radius, y: entity.center.y },
+          { x: entity.center.x - entity.radius, y: entity.center.y },
+          { x: entity.center.x, y: entity.center.y + entity.radius },
+          { x: entity.center.x, y: entity.center.y - entity.radius }
+        ];
+      }
+      return [];
     case "ARC":
-      if (entity.startAngle !== undefined && entity.endAngle !== undefined) {
+      if (entity.startAngle !== undefined && entity.endAngle !== undefined && entity.center && entity.radius !== undefined) {
         return [
           {
             x: entity.center.x + entity.radius * Math.cos(entity.startAngle),
@@ -119,21 +141,21 @@ function getEndpointSnapPoints(entity) {
 
 /**
  * 엔티티에서 중점 스냅 포인트를 추출합니다.
- *
- * @param {Object} entity - 엔티티
- * @returns {Object[]} 스냅 포인트 배열
  */
-function getMidpointSnapPoints(entity) {
+function getMidpointSnapPoints(entity: Entity): Point[] {
   switch (entity.type) {
     case "LINE":
-      return [{
-        x: (entity.start.x + entity.end.x) / 2,
-        y: (entity.start.y + entity.end.y) / 2
-      }];
+      if (entity.start && entity.end) {
+        return [{
+          x: (entity.start.x + entity.end.x) / 2,
+          y: (entity.start.y + entity.end.y) / 2
+        }];
+      }
+      return [];
     case "POLYLINE":
     case "LWPOLYLINE":
       if (!entity.vertices || entity.vertices.length < 2) return [];
-      const midpoints = [];
+      const midpoints: Point[] = [];
       for (let i = 0; i < entity.vertices.length - 1; i++) {
         midpoints.push({
           x: (entity.vertices[i].x + entity.vertices[i + 1].x) / 2,
@@ -148,23 +170,19 @@ function getMidpointSnapPoints(entity) {
 
 /**
  * 엔티티 쌍에서 교차점 스냅 포인트를 계산합니다.
- *
- * @param {Object} entity1 - 엔티티1
- * @param {Object} entity2 - 엔티티2
- * @returns {Object[]} 스냅 포인트 배열
  */
-function getIntersectionSnapPoints(entity1, entity2) {
-  const intersections = [];
+function getIntersectionSnapPoints(entity1: Entity, entity2: Entity): Point[] {
+  const intersections: Point[] = [];
 
-  // LINE-LINE 교차
   if (entity1.type === "LINE" && entity2.type === "LINE") {
-    const pt = lineLineIntersection(entity1.start, entity1.end, entity2.start, entity2.end);
-    if (pt) intersections.push(pt);
+    if (entity1.start && entity1.end && entity2.start && entity2.end) {
+      const pt = lineLineIntersection(entity1.start, entity1.end, entity2.start, entity2.end);
+      if (pt) intersections.push(pt);
+    }
   }
 
-  // LINE-POLYLINE 교차
   if (entity1.type === "LINE" && (entity2.type === "POLYLINE" || entity2.type === "LWPOLYLINE")) {
-    if (entity2.vertices) {
+    if (entity1.start && entity1.end && entity2.vertices) {
       for (let i = 0; i < entity2.vertices.length - 1; i++) {
         const pt = lineLineIntersection(
           entity1.start, entity1.end,
@@ -175,7 +193,7 @@ function getIntersectionSnapPoints(entity1, entity2) {
     }
   }
   if ((entity1.type === "POLYLINE" || entity1.type === "LWPOLYLINE") && entity2.type === "LINE") {
-    if (entity1.vertices) {
+    if (entity1.vertices && entity2.start && entity2.end) {
       for (let i = 0; i < entity1.vertices.length - 1; i++) {
         const pt = lineLineIntersection(
           entity1.vertices[i], entity1.vertices[i + 1],
@@ -186,7 +204,6 @@ function getIntersectionSnapPoints(entity1, entity2) {
     }
   }
 
-  // POLYLINE-POLYLINE 교차
   if ((entity1.type === "POLYLINE" || entity1.type === "LWPOLYLINE") &&
       (entity2.type === "POLYLINE" || entity2.type === "LWPOLYLINE")) {
     if (entity1.vertices && entity2.vertices) {
@@ -207,33 +224,19 @@ function getIntersectionSnapPoints(entity1, entity2) {
 
 /**
  * 스냅 엔진 인스턴스를 생성합니다.
- *
- * @param {Object} options - 스냅 옵션
- * @param {number} [options.tolerance=SNAP_TOLERANCE] - 스냅 허용 오차 (픽셀)
- * @param {string[]} [options.enabledTypes] - 활성화된 스냅 타입 목록
- * @returns {Object} 스냅 엔진 인스턴스
  */
-export function createSnapEngine(options = {}) {
+export function createSnapEngine(options: SnapEngineOptions = {}) {
   const {
     tolerance = SNAP_TOLERANCE,
-    enabledTypes = Object.values(SNAP_TYPES)
+    enabledTypes = Object.values(SNAP_TYPES) as SnapType[]
   } = options;
 
-  /**
-   * 주어진 화면 좌표에서 가장 가까운 스냅 포인트를 찾습니다.
-   *
-   * @param {Object} screenPoint - 화면 좌표 { x, y }
-   * @param {Object[]} entities - 엔티티 배열
-   * @returns {Object|null} 스냅 결과 또는 null
-   */
-  function findSnapPoint(screenPoint, entities) {
-    const candidates = [];
+  function findSnapPoint(screenPoint: Point, entities: Entity[]): SnapResult | null {
+    const candidates: SnapResult[] = [];
 
     for (const entity of entities) {
-      // 제외할 엔티티 (현재 그리려는 선의 시작점 같은 경우)
       if (!entity) continue;
 
-      // 끝점 스냅
       if (enabledTypes.includes(SNAP_TYPES.ENDPOINT)) {
         const endpoints = getEndpointSnapPoints(entity);
         for (const ep of endpoints) {
@@ -250,7 +253,6 @@ export function createSnapEngine(options = {}) {
         }
       }
 
-      // 중점 스냅
       if (enabledTypes.includes(SNAP_TYPES.MIDPOINT)) {
         const midpoints = getMidpointSnapPoints(entity);
         for (const mp of midpoints) {
@@ -268,7 +270,6 @@ export function createSnapEngine(options = {}) {
       }
     }
 
-    // 교차점 스냅 (엔티티 간 조합)
     if (enabledTypes.includes(SNAP_TYPES.INTERSECTION)) {
       for (let i = 0; i < entities.length; i++) {
         for (let j = i + 1; j < entities.length; j++) {
@@ -291,7 +292,6 @@ export function createSnapEngine(options = {}) {
 
     if (candidates.length === 0) return null;
 
-    // 우선순위排序 (높은 우선순위 먼저, 같으면 거리순)
     candidates.sort((a, b) => {
       if (b.priority !== a.priority) return b.priority - a.priority;
       return a.distance - b.distance;
@@ -300,21 +300,13 @@ export function createSnapEngine(options = {}) {
     return candidates[0];
   }
 
-  /**
-   * 특정 스냅 타입만 사용하여 스냅 포인트를 찾습니다.
-   *
-   * @param {Object} screenPoint - 화면 좌표 { x, y }
-   * @param {Object[]} entities - 엔티티 배열
-   * @param {string} snapType - 스냅 타입
-   * @returns {Object|null} 스냅 결과 또는 null
-   */
-  function findSnapPointOfType(screenPoint, entities, snapType) {
-    const candidates = [];
+  function findSnapPointOfType(screenPoint: Point, entities: Entity[], snapType: SnapType): SnapResult | null {
+    const candidates: SnapResult[] = [];
 
     for (const entity of entities) {
       if (!entity) continue;
 
-      let points = [];
+      let points: Point[] = [];
       switch (snapType) {
         case SNAP_TYPES.ENDPOINT:
           points = getEndpointSnapPoints(entity);
@@ -350,20 +342,12 @@ export function createSnapEngine(options = {}) {
     return candidates[0];
   }
 
-  /**
-   * 모든 활성화된 스냅 타입에 대한 스냅 포인트를 반환합니다.
-   *
-   * @param {Object} screenPoint - 화면 좌표 { x, y }
-   * @param {Object[]} entities - 엔티티 배열
-   * @returns {Object[]} 스냅 결과 배열
-   */
-  function findAllSnapPoints(screenPoint, entities) {
-    const results = [];
+  function findAllSnapPoints(screenPoint: Point, entities: Entity[]): SnapResult[] {
+    const results: SnapResult[] = [];
 
     for (const entity of entities) {
       if (!entity) continue;
 
-      // 끝점
       if (enabledTypes.includes(SNAP_TYPES.ENDPOINT)) {
         const endpoints = getEndpointSnapPoints(entity);
         for (const ep of endpoints) {
@@ -379,7 +363,6 @@ export function createSnapEngine(options = {}) {
         }
       }
 
-      // 중점
       if (enabledTypes.includes(SNAP_TYPES.MIDPOINT)) {
         const midpoints = getMidpointSnapPoints(entity);
         for (const mp of midpoints) {

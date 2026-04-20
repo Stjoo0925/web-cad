@@ -9,14 +9,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // presence-layer.jsx 파일이 존재해야 함
 test("presence-layer.jsx 파일이 존재해야 함", async () => {
-  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/collaboration/presence-layer.jsx");
+  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/collaboration/presence-layer.tsx");
   const exists = await fs.access(filePath).then(() => true).catch(() => false);
   assert.ok(exists, "presence-layer.jsx 파일이 존재해야 함");
 });
 
 // 사용자 목록 렌더링 함수가 있어야 함
 test("사용자 목록 렌더링 함수가 있어야 함", async () => {
-  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/collaboration/presence-layer.jsx");
+  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/collaboration/presence-layer.tsx");
   const content = await fs.readFile(filePath, "utf8");
   assert.ok(
     content.includes("user") || content.includes("users") || content.includes("presence"),
@@ -26,7 +26,7 @@ test("사용자 목록 렌더링 함수가 있어야 함", async () => {
 
 // 커서 위치 표시 함수가 있어야 함
 test("커서 위치 표시 함수가 있어야 함", async () => {
-  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/collaboration/presence-layer.jsx");
+  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/collaboration/presence-layer.tsx");
   const content = await fs.readFile(filePath, "utf8");
   assert.ok(
     content.includes("cursor") || content.includes("Cursor") || content.includes("position"),
@@ -36,7 +36,7 @@ test("커서 위치 표시 함수가 있어야 함", async () => {
 
 // 사용자 입장/퇴장 처리 함수가 있어야 함
 test("사용자 입장/퇴장 처리 함수가 있어야 함", async () => {
-  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/collaboration/presence-layer.jsx");
+  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/collaboration/presence-layer.tsx");
   const content = await fs.readFile(filePath, "utf8");
   assert.ok(
     content.includes("join") || content.includes("leave") || content.includes("enter") || content.includes("exit"),

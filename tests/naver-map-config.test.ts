@@ -5,7 +5,7 @@ import {
   buildNaverMapScriptUrl,
   createNaverMapOptions,
   shouldEnableNaverMapBackground
-} from "../packages/sdk-react/src/maps/naver-map-config.js";
+} from "../packages/sdk-react/src/maps/naver-map-config.ts";
 
 test("enables naver map only for 2d cad mode with a client id", () => {
   assert.equal(

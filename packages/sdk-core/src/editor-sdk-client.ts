@@ -1,5 +1,45 @@
+export type SdkEventType =
+  | "document.status"
+  | "document.error"
+  | "document.opened"
+  | "document.closed"
+  | "upload.progress"
+  | "upload.error"
+  | "upload.completed"
+  | "selection.changed"
+  | "tool.changed"
+  | "viewport.zoomToFit"
+  | "save.status";
+
+export interface SdkEvent {
+  type: SdkEventType;
+  documentId?: string;
+  status?: string;
+  message?: string;
+  document?: unknown;
+  assetType?: string;
+  fileName?: string;
+  loadedBytes?: number;
+  receivedBytes?: number;
+  assetId?: string;
+  entityIds?: string[];
+  tool?: string;
+}
+
+export interface EditorSdkClientOptions {
+  baseUrl: string;
+  fetchImpl?: typeof fetch;
+}
+
 export class EditorSdkClient {
-  constructor({ baseUrl, fetchImpl = globalThis.fetch }) {
+  baseUrl: string;
+  fetchImpl: typeof fetch;
+  listeners: Set<(event: SdkEvent) => void>;
+  token: string | null;
+  currentSelection: string[];
+  currentTool?: string;
+
+  constructor({ baseUrl, fetchImpl = globalThis.fetch }: EditorSdkClientOptions) {
     this.baseUrl = baseUrl.replace(/\/$/u, "");
     this.fetchImpl = fetchImpl;
     this.listeners = new Set();
@@ -7,25 +47,25 @@ export class EditorSdkClient {
     this.currentSelection = [];
   }
 
-  setToken(token) {
+  setToken(token: string) {
     this.token = token;
   }
 
-  subscribe(listener) {
+  subscribe(listener: (event: SdkEvent) => void) {
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
     };
   }
 
-  async openDocument(documentId) {
+  async openDocument(documentId: string) {
     this.#emit({ type: "document.status", status: "loading", documentId });
     const response = await this.fetchImpl(`${this.baseUrl}/api/documents/${documentId}`, {
       headers: this.#headers()
     });
 
     if (!response.ok) {
-      const errorEvent = { type: "document.error", documentId, message: "Failed to open document" };
+      const errorEvent = { type: "document.error" as const, documentId, message: "Failed to open document" };
       this.#emit(errorEvent);
       throw new Error(errorEvent.message);
     }
@@ -35,13 +75,18 @@ export class EditorSdkClient {
     return document;
   }
 
-  async uploadAsset({ documentId, assetType, fileName, content }) {
+  async uploadAsset({ documentId, assetType, fileName, content }: {
+    documentId: string;
+    assetType: string;
+    fileName: string;
+    content: ArrayBuffer | string;
+  }) {
     this.#emit({
       type: "upload.progress",
       documentId,
       assetType,
       fileName,
-      loadedBytes: content.byteLength ?? content.length ?? 0
+      loadedBytes: (content as ArrayBuffer).byteLength ?? (content as string).length ?? 0
     });
 
     const response = await this.fetchImpl(`${this.baseUrl}/api/documents/${documentId}/assets?assetType=${assetType}`, {
@@ -55,7 +100,7 @@ export class EditorSdkClient {
     });
 
     if (!response.ok) {
-      const errorEvent = { type: "upload.error", documentId, assetType, fileName, message: "Upload failed" };
+      const errorEvent = { type: "upload.error" as const, documentId, assetType, fileName, message: "Upload failed" };
       this.#emit(errorEvent);
       throw new Error(errorEvent.message);
     }
@@ -72,43 +117,48 @@ export class EditorSdkClient {
     return result;
   }
 
-  setSelection({ entityIds }) {
+  setSelection({ entityIds }: { entityIds: string[] }) {
     this.currentSelection = [...entityIds];
     this.#emit({ type: "selection.changed", entityIds: [...entityIds] });
   }
 
-  async closeDocument(documentId) {
+  async closeDocument(documentId: string) {
     this.#emit({ type: "document.status", status: "closing", documentId });
     this.currentSelection = [];
     this.#emit({ type: "document.closed", documentId });
   }
 
-  setTool(tool) {
+  setTool(tool: string) {
     this.currentTool = tool;
     this.#emit({ type: "tool.changed", tool });
   }
 
-  zoomToFit(documentId) {
+  zoomToFit(documentId: string) {
     this.#emit({ type: "viewport.zoomToFit", documentId });
   }
 
-  async upload({ documentId, assetType, fileName, content }) {
+  async upload({ documentId, assetType, fileName, content }: {
+    documentId: string;
+    assetType: string;
+    fileName: string;
+    content: ArrayBuffer | string;
+  }) {
     return this.uploadAsset({ documentId, assetType, fileName, content });
   }
 
-  reportAutosave(status, documentId) {
+  reportAutosave(status: string, documentId: string) {
     this.#emit({ type: "save.status", status, documentId });
   }
 
-  #headers() {
-    const headers = {};
+  #headers(): Record<string, string> {
+    const headers: Record<string, string> = {};
     if (this.token) {
       headers.Authorization = `Bearer ${this.token}`;
     }
     return headers;
   }
 
-  #emit(event) {
+  #emit(event: SdkEvent) {
     for (const listener of this.listeners) {
       listener(event);
     }

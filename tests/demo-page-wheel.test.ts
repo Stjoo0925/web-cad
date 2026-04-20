@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Passive event listener 에러가 발생하지 않도록 wheel 핸들러에서 preventDefault를 올바르게 처리해야 함
 test("wheel 이벤트 핸들러는 passive_listener 에러를 발생시키지 않아야 함", async () => {
-  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.jsx");
+  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.tsx");
   const content = await fs.readFile(filePath, "utf8");
 
   // onWheel 핸들러에서 preventDefault를 사용하는지 확인

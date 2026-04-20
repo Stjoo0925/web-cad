@@ -121,12 +121,14 @@ export function createTrimCommand(
   let state: TrimCommandState = "selecting";
   let cuttingEdges: Entity[] = [];
   let trimTargets: Entity[] = [];
+  let lastClickPoint: Point = { x: 0, y: 0 };
 
   function setState(newState: TrimCommandState) {
     state = newState;
   }
 
   function handleClick(screenPoint: Point) {
+    lastClickPoint = screenPoint;
     switch (state) {
       case "selecting":
         // 잘라내기 경계선 선택 모드로 전환
@@ -166,7 +168,10 @@ export function createTrimCommand(
             edge,
           );
           for (const pt of intersections) {
-            const dist = Math.hypot(pt.x - target.start.x, pt.y - target.start.y);
+            const dist = Math.hypot(
+              pt.x - target.start.x,
+              pt.y - target.start.y,
+            );
             allIntersections.push({ point: pt, dist });
           }
         }
@@ -178,7 +183,7 @@ export function createTrimCommand(
 
         // 첫 번째 세그먼트 유지 (시작점부터 첫 교차점까지)
         const firstInt = allIntersections[0].point;
-        const side = getPointSide(screenPoint, target.start, target.end);
+        const side = getPointSide(lastClickPoint, target.start, target.end);
 
         if (allIntersections.length === 1) {
           // 단일 교차점 - 해당 지점까지 자름
@@ -219,10 +224,7 @@ export function createTrimCommand(
             });
           }
         }
-      } else if (
-        target.type === "POLYLINE" ||
-        target.type === "LWPOLYLINE"
-      ) {
+      } else if (target.type === "POLYLINE" || target.type === "LWPOLYLINE") {
         if (!target.vertices) continue;
 
         const newVertices: Point[] = [];

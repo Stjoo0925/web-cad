@@ -130,26 +130,27 @@ export function createRotateCommand(
   function confirm() {
     if (!center || selection.length === 0) return;
 
+    const centerPoint = center; // 타입 좁히기: null 체크 후 Point 타입 보장
     const results: RotateCommandResult[] = selection.map((entity) => {
       const params: RotateCommandResult["params"] = {};
 
       if (entity.start && entity.end) {
-        const rotatedStart = rotatePoint(entity.start, center, currentAngle);
-        const rotatedEnd = rotatePoint(entity.end, center, currentAngle);
+        const rotatedStart = rotatePoint(entity.start, centerPoint, currentAngle);
+        const rotatedEnd = rotatePoint(entity.end, centerPoint, currentAngle);
         params.start = rotatedStart;
         params.end = rotatedEnd;
       }
       if (entity.position) {
-        const rotated = rotatePoint(entity.position, center, currentAngle);
+        const rotated = rotatePoint(entity.position, centerPoint, currentAngle);
         params.position = rotated;
       }
       if (entity.center) {
-        const rotated = rotatePoint(entity.center, center, currentAngle);
+        const rotated = rotatePoint(entity.center, centerPoint, currentAngle);
         params.center = rotated;
       }
       if (entity.vertices) {
         params.vertices = entity.vertices.map((v) =>
-          rotatePoint(v, center, currentAngle),
+          rotatePoint(v, centerPoint, currentAngle),
         );
       }
       if (entity.startAngle !== undefined && entity.endAngle !== undefined) {
@@ -223,7 +224,7 @@ export function applyRotateTransform(
   angle: number,
   center: Point,
 ): Entity {
-  const newEntity = { ...entity };
+  const newEntity: Entity = { ...entity };
 
   function rotatePoint(point: Point): Point {
     const cos = Math.cos(angle);

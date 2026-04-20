@@ -89,7 +89,7 @@ export function createScene(options: SceneOptions = {}): {
 
   let material: MaterialMock | null = null;
   let positions: Float32Array | null = null;
-  let colors: Float32Array | null = null;
+  let colors: Float32Array | undefined = undefined;
 
   function addPoints(data: PointCloudData): SceneResult {
     const { positions: pos, colors: col, bbox } = data;
@@ -161,7 +161,7 @@ export function createScene(options: SceneOptions = {}): {
   function dispose() {
     material = null;
     positions = null;
-    colors = null;
+    colors = undefined;
   }
 
   return {

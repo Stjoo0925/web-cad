@@ -186,8 +186,8 @@ export function createOffsetTool(options: OffsetToolOptions = {}) {
       side = sideOfLine(point, selectedEntity.start, selectedEntity.end) > 0 ? 1 : -1;
     }
 
-    const offsetEntity = offsetEntity(selectedEntity, state.offsetDistance, side);
-    const result = [offsetEntity];
+    const offsettedEntity = offsetEntity(selectedEntity, state.offsetDistance, side);
+    const result = [offsettedEntity];
 
     if (onComplete) {
       onComplete(result);

@@ -125,7 +125,14 @@ export async function exportPdf(
 ): Promise<ExportResult> {
   try {
     // 사용하지 않을 경우 번들 크기 증가를 방지하기 위해 jsPDF를 동적으로 임포트
-    const { jsPDF } = await import("jspdf");
+    let jsPDF: any;
+    try {
+      // @ts-ignore - jspdf는 선택적 의존성으로 타입 선언이 없을 수 있음
+      const module = await import("jspdf");
+      jsPDF = module.jsPDF;
+    } catch (importError) {
+      return { success: false, error: "jspdf 패키지가 설치되지 않았습니다. npm install jspdf를 실행하세요." };
+    }
 
     const pageSize = options.pageSize ?? "a4";
     const filename = options.filename ?? "cad-export.pdf";

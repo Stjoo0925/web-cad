@@ -13,3 +13,9 @@ html, body, #root {
   height: 100%;
   overflow: hidden;
 }
+
+/* Viewport surface — must not be intercepted by overlay panels */
+[data-cad-viewport-surface] {
+  touch-action: none;
+  overflow: hidden;
+}

@@ -1,11 +1,11 @@
 /**
- * Export Tool - PNG/PDF export utilities for CAD canvas
+ * 내보내기 도구 - CAD 캔버스용 PNG/PDF 내보내기 유틸리티
  * @module tools/export-tool
  */
 
 // ============================================================================
-// Types
-// ============================================================================
+// 타입
+// ===========================================================================
 
 export type ExportFormat = "png" | "pdf";
 
@@ -15,13 +15,13 @@ export type PdfPageSize = "a4" | "letter" | "legal";
 
 export interface ExportOptions {
   format: ExportFormat;
-  /** PNG quality (0.8 = compressed, 1.0 = lossless) */
+  /** PNG 품질 (0.8 = 압축, 1.0 = 무손실) */
   quality?: PngQuality;
-  /** PDF page size */
+  /** PDF 페이지 크기 */
   pageSize?: PdfPageSize;
-  /** Export selection only vs full canvas */
+  /** 선택 영역만 내보내기 vs 전체 캔버스 */
   selectionOnly?: boolean;
-  /** Filename without extension */
+  /** 확장자 없는 파일명 */
   filename?: string;
 }
 
@@ -34,11 +34,11 @@ export interface ExportResult {
 }
 
 // ============================================================================
-// Utility: downloadFile
-// ============================================================================
+// 유틸리티: downloadFile
+// ===========================================================================
 
 /**
- * Trigger browser download from a data URL or Blob
+ * 데이터 URL 또는 Blob에서 브라우저 다운로드를 트리거합니다.
  */
 export function downloadFile(
   dataUrlOrBlob: string | Blob,
@@ -56,18 +56,18 @@ export function downloadFile(
   link.click();
   document.body.removeChild(link);
 
-  // Revoke only for blob URLs (data URLs are inline and tiny)
+  // blob URL만 해제합니다 (데이터 URL은 인라인이고 작음)
   if (typeof dataUrlOrBlob !== "string") {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 }
 
 // ============================================================================
-// PNG Export
-// ============================================================================
+// PNG 내보내기
+// ===========================================================================
 
 /**
- * Export canvas as PNG and trigger download
+ * 캔버스를 PNG로 내보내고 다운로드를 트리거합니다.
  */
 export async function exportPng(
   canvas: HTMLCanvasElement,
@@ -80,7 +80,7 @@ export async function exportPng(
     const quality = options.quality ?? 1.0;
     const filename = options.filename ?? "cad-export.png";
 
-    // Force highest resolution export
+    // 최고 해상도 내보내기 강제
     const dataUrl = canvas.toDataURL("image/png", quality);
 
     downloadFile(dataUrl, filename);
@@ -93,7 +93,7 @@ export async function exportPng(
 }
 
 /**
- * Export canvas as a Blob (useful for PDF generation)
+ * 캔버스를 Blob으로 내보냅니다 (PDF 생성에 유용)
  */
 export async function canvasToBlob(
   canvas: HTMLCanvasElement,
@@ -109,12 +109,12 @@ export async function canvasToBlob(
 }
 
 // ============================================================================
-// PDF Export (jsPDF)
-// ============================================================================
+// PDF 내보내기 (jsPDF)
+// ===========================================================================
 
 /**
- * Export canvas as PDF using jsPDF
- * Requires jspdf package: npm install jspdf
+ * jsPDF를 사용하여 캔버스를 PDF로 내보냅니다
+ * jspdf 패키지 필요: npm install jspdf
  */
 export async function exportPdf(
   canvas: HTMLCanvasElement,
@@ -124,13 +124,20 @@ export async function exportPdf(
   } = {},
 ): Promise<ExportResult> {
   try {
-    // Dynamic import jsPDF to avoid bloating the bundle if not used
-    const { jsPDF } = await import("jspdf");
+    // 사용하지 않을 경우 번들 크기 증가를 방지하기 위해 jsPDF를 동적으로 임포트
+    let jsPDF: any;
+    try {
+      // @ts-ignore - jspdf는 선택적 의존성으로 타입 선언이 없을 수 있음
+      const module = await import("jspdf");
+      jsPDF = module.jsPDF;
+    } catch (importError) {
+      return { success: false, error: "jspdf 패키지가 설치되지 않았습니다. npm install jspdf를 실행하세요." };
+    }
 
     const pageSize = options.pageSize ?? "a4";
     const filename = options.filename ?? "cad-export.pdf";
 
-    // Page dimensions in mm
+    // 페이지 크기 (mm 단위)
     const pageSizes: Record<PdfPageSize, { width: number; height: number }> = {
       a4: { width: 210, height: 297 },
       letter: { width: 215.9, height: 279.4 },
@@ -141,27 +148,27 @@ export async function exportPdf(
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
 
-    // Calculate scale to fit canvas into page (with margins)
+    // 캔버스를 페이지에 맞추기 위한 스케일 계산 (여백 포함)
     const margin = 10; // mm
     const availableWidth = page.width - margin * 2;
     const availableHeight = page.height - margin * 2;
 
-    const scaleX = availableWidth / (canvasWidth / 96); // 96 DPI assumption
+    const scaleX = availableWidth / (canvasWidth / 96); // 96 DPI 가정
     const scaleY = availableHeight / (canvasHeight / 96);
-    const scale = Math.min(scaleX, scaleY, 1); // cap at 1x
+    const scale = Math.min(scaleX, scaleY, 1); // 최대 1배 제한
 
     const imgWidth = (canvasWidth / 96) * scale;
     const imgHeight = (canvasHeight / 96) * scale;
 
-    // Center on page
+    // 페이지 중앙 정렬
     const offsetX = margin + (availableWidth - imgWidth) / 2;
     const offsetY = margin + (availableHeight - imgHeight) / 2;
 
-    // Create PDF
+    // PDF 생성
     const pdf = new jsPDF({
       orientation: imgWidth > imgHeight ? "landscape" : "portrait",
       unit: "mm",
-      format: pageSize === "legal" ? "letter" : pageSize, // jsPDF supports a4, letter
+      format: pageSize === "legal" ? "letter" : pageSize, // jsPDF는 a4, letter 지원
     });
 
     const dataUrl = canvas.toDataURL("image/png", 0.95);
@@ -176,16 +183,16 @@ export async function exportPdf(
 }
 
 // ============================================================================
-// Print
-// ============================================================================
+// 인쇄
+// ===========================================================================
 
 /**
- * Open browser print dialog with canvas content
+ * 캔버스 내용으로 브라우저 인쇄 대화상을 엽니다.
  */
 export function printCanvas(canvas: HTMLCanvasElement): void {
   const dataUrl = canvas.toDataURL("image/png");
 
-  // Create a print-friendly window
+  // 인쇄 친화적인 창 생성
   const printWindow = window.open("", "_blank");
   if (!printWindow) return;
 
@@ -193,7 +200,7 @@ export function printCanvas(canvas: HTMLCanvasElement): void {
     <!DOCTYPE html>
     <html>
       <head>
-        <title>CAD Print</title>
+        <title>CAD 인쇄</title>
         <style>
           @page { margin: 10mm; }
           body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -210,11 +217,11 @@ export function printCanvas(canvas: HTMLCanvasElement): void {
 }
 
 // ============================================================================
-// Main export function
-// ============================================================================
+// 메인 내보내기 함수
+// ===========================================================================
 
 /**
- * Unified export function
+ * 통합 내보내기 함수
  */
 export async function exportCanvas(
   canvas: HTMLCanvasElement,
@@ -228,6 +235,6 @@ export async function exportCanvas(
     case "pdf":
       return exportPdf(canvas, { pageSize: options.pageSize, filename });
     default:
-      return { success: false, error: `Unsupported format: ${options.format}` };
+      return { success: false, error: `지원되지 않는 형식: ${options.format}` };
   }
 }

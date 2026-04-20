@@ -26,6 +26,8 @@ export interface CadCanvasLayerProps {
   snapEnabled?: boolean;
   /** Ortho 모드 활성화 여부 */
   orthoEnabled?: boolean;
+  /** 그리드 크기 */
+  gridSize?: number;
   /** 마우스 이동 시 world 좌표 콜백 */
   onMouseMove?: (worldPos: Point) => void;
   /** 캔버스 클릭 시 world 좌표 콜백 */
@@ -59,6 +61,7 @@ export function CadCanvasLayer({
   canvasRef: canvasRefProp,
   snapEnabled = true,
   orthoEnabled = false,
+  gridSize = 50,
   onMouseMove,
   onClick,
   onDoubleClick,
@@ -118,7 +121,7 @@ export function CadCanvasLayer({
     if (!ctx) return;
 
     clearCanvas(ctx, canvas.width, canvas.height);
-    drawGrid(ctx, viewport);
+    drawGrid(ctx, { ...viewport, gridSize });
     renderEntities(ctx, entities, viewport, selectedIds, selectedColor);
 
     // 스냅 포인트 렌더링
@@ -161,6 +164,7 @@ export function CadCanvasLayer({
     mouseScreenPos,
     screenToWorld,
     selectionBox,
+    gridSize,
   ]);
 
   // 스냅 포인트 계산

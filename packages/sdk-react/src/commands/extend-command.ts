@@ -68,7 +68,7 @@ function lineLineIntersection(
 }
 
 /**
- *点和线的交点，计算延伸线到边界
+ * 점과 선의 교차점으로 연장선을 경계까지 계산합니다.
  */
 function getLineExtensionPoint(
   lineStart: Point,
@@ -126,22 +126,22 @@ export function createExtendCommand(
   function handleClick(screenPoint: Point) {
     switch (state) {
       case "selecting":
-        // Enter boundary selection mode
+        // 경계선 선택 모드 진입
         setState("boundary");
         break;
 
       case "boundary":
-        // Add entity as boundary edge
+        // 엔티티를 경계선으로 추가
         break;
 
       case "extend-target":
-        // Extend at the clicked point
+        // 클릭한 위치에서 연장
         break;
     }
   }
 
   function handleMove(screenPoint: Point) {
-    // Preview could show extend point
+    // 미리보기에 연장점 표시 가능
   }
 
   function confirm() {
@@ -154,11 +154,11 @@ export function createExtendCommand(
         let extendedStart = target.start;
         let extendedEnd = target.end;
 
-        // Try to extend from start point
+        // 시작점에서 연장 시도
         for (const boundary of boundaryEdges) {
           const extPt = getLineExtensionPoint(target.start, target.end, boundary);
           if (extPt) {
-            // Check which end is closer to the intersection
+            // 어느 끝이 교차점에 더 가까운지 확인
             const distFromStart = Math.hypot(extPt.x - target.start.x, extPt.y - target.start.y);
             const distFromEnd = Math.hypot(extPt.x - target.end.x, extPt.y - target.end.y);
 

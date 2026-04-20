@@ -2,7 +2,7 @@
  * scale-tool.ts
  * 스케일(SCALE) 도구 모듈
  *
- * 선택된 엔티티들을 지정된 기준점を中心に拡大縮小します。
+ * 선택된 엔티티들을 지정된 기준점을 중심으로 확대/축소합니다.
  * 첫 번째 클릭: 기준점 (스케일 중심)
  * 두 번째 클릭: 스케일 비율 결정 (기준점에서의 거리 비율)
  */
@@ -121,19 +121,19 @@ export function createScaleTool(options: ScaleToolOptions = {}) {
     scaleFactor?: number,
   ): Entity[] | null {
     if (!state.isPending) {
-      // First click: set base point
+      // 첫 번째 클릭: 기준점 설정
       state.basePoint = { ...point };
       state.referencePoint = { ...point };
       state.isPending = true;
       state.selectedEntities = selectedEntities;
       return null;
     } else {
-      // Second click: calculate scale factor
+      // 두 번째 클릭: 스케일 비율 계산
       state.referencePoint = { ...point };
 
       if (!state.basePoint || !state.referencePoint) return null;
 
-      // Calculate scale factor from distance ratio
+      // 거리 비율로 스케일 비율 계산
       const factor =
         scaleFactor ?? getDistance(state.referencePoint, state.basePoint) / 10;
 
@@ -147,7 +147,7 @@ export function createScaleTool(options: ScaleToolOptions = {}) {
         onComplete(scaledEntities);
       }
 
-      // Reset
+      // 초기화
       state.basePoint = null;
       state.referencePoint = null;
       state.isPending = false;

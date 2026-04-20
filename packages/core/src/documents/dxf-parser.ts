@@ -1,13 +1,13 @@
 /**
  * dxf-parser.ts
- * DXF file parsing module
+ * DXF 파일 파싱 모듈
  *
- * Parses DXF file text into internal entity collection.
- * Supported entities: POINT, LINE, LWPOLYLINE, CIRCLE, ARC, TEXT
- * Unsupported entities are logged as warnings and skipped.
+ * DXF 파일 텍스트를 내부 엔티티 컬렉션으로 파싱합니다.
+ * 지원 엔티티: POINT, LINE, LWPOLYLINE, CIRCLE, ARC, TEXT
+ * 지원되지 않는 엔티티는 경고로 기록되고 건너뜁니다.
  */
 
-// Supported entity types
+// 지원되는 엔티티 타입
 const SUPPORTED_ENTITY_TYPES = new Set([
   "POINT",
   "LINE",
@@ -48,7 +48,7 @@ export interface ParseDxfResult {
   warnings: string[];
 }
 
-// Warnings log collector
+// 경고 로그 수집기
 const warnings: string[] = [];
 
 function generateEntityId(): string {

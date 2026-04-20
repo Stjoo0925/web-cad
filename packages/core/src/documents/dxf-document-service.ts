@@ -1,8 +1,8 @@
 /**
  * dxf-document-service.ts
- * DXF document management service
+ * DXF 문서 관리 서비스
  *
- * Manages document sidecar, snapshots, and DXF import/export operations.
+ * 문서 사이드카, 스냅샷, DXF 가져오기/보내기 작업을 관리합니다.
  */
 
 interface StorageService {
@@ -295,11 +295,11 @@ export class DxfDocumentService {
   }
 
   async importDxf({ documentId, dxfContent, originalFileName = null, pointCloudReference = null }: ImportDxfOptions): Promise<ImportDxfResult> {
-    // DXF parser (lazy load)
+    // DXF 파서 (지연 로드)
     const { parseDxf } = await import("./dxf-parser.js");
     const { entities, warnings } = parseDxf(dxfContent) as { entities: Entity[]; warnings: string[] };
 
-    // Create sidecar with original file reference and metadata
+    // 원본 파일 참조와 메타데이터로 사이드카 생성
     const sidecar: Sidecar = {
       documentId,
       pointCloudReference,
@@ -315,7 +315,7 @@ export class DxfDocumentService {
     };
     await this.storage.writeJson(this.#sidecarPath(documentId), sidecar);
 
-    // Register each entity as initial commit event
+    // 각 엔티티를 초기 커밋 이벤트로 등록
     for (const entity of entities) {
       const event: DocumentEvent = {
         type: "entity.commit.applied",
@@ -326,7 +326,7 @@ export class DxfDocumentService {
     }
     await this.storage.writeJson(this.#sidecarPath(documentId), sidecar);
 
-    // Create first snapshot
+    // 첫 번째 스냅샷 생성
     await this.createSnapshot({ documentId });
 
     return {

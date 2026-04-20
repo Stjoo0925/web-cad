@@ -103,14 +103,14 @@ export function createMoveTool(options: MoveToolOptions = {}) {
     selectedEntities: Entity[],
   ): Entity[] | null {
     if (!state.isPending) {
-      // First click: set base point
+      // 첫 번째 클릭: 기준점 설정
       state.basePoint = { ...point };
       state.targetPoint = { ...point };
       state.isPending = true;
       state.selectedEntities = selectedEntities;
       return null;
     } else {
-      // Second click: complete move
+      // 두 번째 클릭: 이동 완료
       state.targetPoint = { ...point };
 
       if (!state.basePoint || !state.targetPoint) return null;
@@ -128,7 +128,7 @@ export function createMoveTool(options: MoveToolOptions = {}) {
         onComplete(movedEntities);
       }
 
-      // Reset state
+      // 상태 초기화
       state.basePoint = null;
       state.targetPoint = null;
       state.isPending = false;

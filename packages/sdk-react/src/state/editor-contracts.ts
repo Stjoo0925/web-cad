@@ -1,17 +1,17 @@
 /**
  * editor-contracts.ts
- * Unified contract types for Phase 0: Editor/Document state contract unification
+ * Phase 0용 통합 계약 타입: 에디터/문서 상태 계약 통합
  *
- * This module defines shared interfaces used across:
- * - EditorState, Viewport, Selection, Tool state
- * - EditorShell, CadPointCloudEditor, SDK client, server document responses
- * - Entity, Layer, Document metadata
+ * 이 모듈은 다음에서 사용되는 공유 인터페이스를 정의합니다:
+ * - EditorState, Viewport, Selection, Tool 상태
+ * - EditorShell, CadPointCloudEditor, SDK 클라이언트, 서버 문서 응답
+ * - Entity, Layer, Document 메타데이터
  *
- * All contracts use consistent field names and event types.
+ * 모든 계약은 일관된 필드 이름과 이벤트 타입을 사용합니다.
  */
 
 /**
- * Point in 2D world coordinates
+ * 2D 월드 좌표의 점
  */
 export interface Point {
   x: number;
@@ -19,7 +19,7 @@ export interface Point {
 }
 
 /**
- * Viewport state for canvas rendering
+ * 캔버스 렌더링용 뷰포트 상태
  */
 export interface Viewport {
   width: number;
@@ -30,7 +30,7 @@ export interface Viewport {
 }
 
 /**
- * Entity types supported by the editor
+ * 에디터에서 지원하는 엔티티 타입
  */
 export type EntityType =
   | "POINT"
@@ -42,8 +42,8 @@ export type EntityType =
   | "POLYLINE";
 
 /**
- * Unified Entity interface
- * id is REQUIRED - uniquely identifies an entity in the document
+ * 통합 엔티티 인터페이스
+ * id는 필수 - 문서에서 엔티티를 고유하게 식별합니다
  */
 export interface Entity {
   id: string;
@@ -66,7 +66,7 @@ export interface Entity {
 }
 
 /**
- * All editor tool types - unified across EditorShell, CadPointCloudEditor, editor-store
+ * 모든 에디터 도구 타입 - EditorShell, CadPointCloudEditor, editor-store 간 통합
  */
 export const EDITOR_TOOLS = {
   SELECT: "select",
@@ -84,7 +84,7 @@ export const EDITOR_TOOLS = {
 export type EditorToolType = (typeof EDITOR_TOOLS)[keyof typeof EDITOR_TOOLS];
 
 /**
- * View modes for the editor
+ * 에디터의 뷰 모드
  */
 export const VIEW_MODES = {
   CAD_2D: "2d-cad",
@@ -95,7 +95,7 @@ export const VIEW_MODES = {
 export type ViewModeType = (typeof VIEW_MODES)[keyof typeof VIEW_MODES];
 
 /**
- * Editor state - manages tool, selection, viewport, and view mode
+ * 에디터 상태 - 도구, 선택, 뷰포트, 뷰 모드를 관리합니다
  */
 export interface EditorState {
   tool: EditorToolType;
@@ -117,32 +117,32 @@ export interface EditorStore {
 }
 
 /**
- * Unified editor event system
- * Combines SdkEventType and CollabEventType into single contract
+ * 통합 에디터 이벤트 시스템
+ * SdkEventType과 CollabEventType을 단일 계약으로 결합합니다
  */
 export const EDITOR_EVENTS = {
-  // Document events
+  // 문서 이벤트
   DOCUMENT_STATUS: "document.status",
   DOCUMENT_ERROR: "document.error",
   DOCUMENT_OPENED: "document.opened",
   DOCUMENT_CLOSED: "document.closed",
 
-  // Upload events
+  // 업로드 이벤트
   UPLOAD_PROGRESS: "upload.progress",
   UPLOAD_ERROR: "upload.error",
   UPLOAD_COMPLETED: "upload.completed",
 
-  // Selection & tool events
+  // 선택 및 도구 이벤트
   SELECTION_CHANGED: "selection.changed",
   TOOL_CHANGED: "tool.changed",
 
-  // Viewport events
+  // 뷰포트 이벤트
   VIEWPORT_ZOOM_TO_FIT: "viewport.zoomToFit",
 
-  // Save events
+  // 저장 이벤트
   SAVE_STATUS: "save.status",
 
-  // Collaboration events (SSE)
+  // 협업 이벤트 (SSE)
   CHECKOUT: "checkout",
   DRAFT: "draft",
   COMMIT: "commit",
@@ -157,7 +157,7 @@ export type EditorEventType =
   (typeof EDITOR_EVENTS)[keyof typeof EDITOR_EVENTS];
 
 /**
- * Unified editor event payload
+ * 통합 에디터 이벤트 페이로드
  */
 export interface EditorEvent {
   type: EditorEventType;
@@ -179,8 +179,8 @@ export interface EditorEvent {
 }
 
 /**
- * Document metadata - unified across server API and sidecar storage
- * Server stores as JSON string, Sidecar stores as object - both now use Record
+ * 문서 메타데이터 - 서버 API와 사이드카 저장소 간 통합
+ * 서버는 JSON 문자열로 저장, 사이드카는 객체로 저장 - 둘 다 이제 Record 사용
  */
 export interface DocumentMetadata {
   createdAt?: string;
@@ -190,8 +190,8 @@ export interface DocumentMetadata {
 }
 
 /**
- * Layer color representation
- * Uses AutoCAD color index (1-255) as standard, with string color for display
+ * 레이어 색상 표현
+ * AutoCAD 색상 인덱스(1-255)를 표준으로 사용하며, 표시용 문자열 색상 포함
  */
 export interface LayerColor {
   index: number;
@@ -199,7 +199,7 @@ export interface LayerColor {
 }
 
 /**
- * Layer state
+ * 레이어 상태
  */
 export const LAYER_STATES = {
   ACTIVE: "active",
@@ -209,7 +209,7 @@ export const LAYER_STATES = {
 export type LayerStateType = (typeof LAYER_STATES)[keyof typeof LAYER_STATES];
 
 /**
- * Unified Layer interface
+ * 통합 레이어 인터페이스
  */
 export interface Layer {
   id: string;
@@ -223,14 +223,14 @@ export interface Layer {
 }
 
 /**
- * Generate a unique entity ID
+ * 고유 엔티티 ID를 생성합니다
  */
 export function generateEntityId(): string {
   return `entity_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
 /**
- * Create a minimal Entity with required fields
+ * 필수 필드가 포함된 최소 엔티티를 생성합니다
  */
 export function createEntity(type: EntityType, id?: string): Entity {
   return {

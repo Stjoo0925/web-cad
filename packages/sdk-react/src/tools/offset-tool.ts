@@ -56,7 +56,7 @@ function offsetLine(entity: Entity, distance: number, side: number): Entity {
   const len = Math.hypot(dx, dy);
   if (len === 0) return entity;
 
-  // Normal vector perpendicular to line (rotated 90 degrees)
+  // 선에 수직인 법선 벡터 (90도 회전)
   const nx = -dy / len;
   const ny = dx / len;
 
@@ -79,7 +79,7 @@ function offsetPolyline(entity: Entity, distance: number): Entity[] {
 
   const newId = generateEntityId();
   const newVertices = entity.vertices.map((v, i) => {
-    // For each vertex, calculate offset direction based on adjacent segments
+    // 각 버텍스에 대해 인접 세그먼트 기준으로 오프셋 방향 계산
     const prev = entity.vertices![i - 1] ?? v;
     const next = entity.vertices![i + 1] ?? v;
 
@@ -88,7 +88,7 @@ function offsetPolyline(entity: Entity, distance: number): Entity[] {
     const len1 = Math.hypot(dx1, dy1);
     if (len1 === 0) return v;
 
-    // Perpendicular direction
+    // 수직 방향
     const nx = -dy1 / len1;
     const ny = dx1 / len1;
 
@@ -107,7 +107,7 @@ function offsetPolyline(entity: Entity, distance: number): Entity[] {
 }
 
 /**
- * 서클 엔티티를 오프셋합니다 (半径を+/- distanceにした同心円).
+ * 서클 엔티티를 오프셋합니다 (반지름을 +/- distance만큼 변경한 동심원).
  */
 function offsetCircle(entity: Entity, distance: number): Entity {
   if (!entity.center || entity.radius === undefined) return entity;
@@ -181,13 +181,13 @@ export function createOffsetTool(options: OffsetToolOptions = {}) {
     if (!selectedEntity) return null;
 
     let side = 1;
-    // For lines, determine which side the click was on
+    // 선의 경우, 클릭이 어느 쪽에 있는지 판단
     if (selectedEntity.type === "LINE" && selectedEntity.start && selectedEntity.end) {
       side = sideOfLine(point, selectedEntity.start, selectedEntity.end) > 0 ? 1 : -1;
     }
 
-    const offsetEntity = offsetEntity(selectedEntity, state.offsetDistance, side);
-    const result = [offsetEntity];
+    const offsettedEntity = offsetEntity(selectedEntity, state.offsetDistance, side);
+    const result = [offsettedEntity];
 
     if (onComplete) {
       onComplete(result);

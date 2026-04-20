@@ -1,9 +1,9 @@
 /**
- * Collaboration session manager for entity checkouts and drafts.
+ * 엔티티 체크아웃 및 임시 수정을 위한 협업 세션 관리자
  * @module collaboration/session-manager
  */
 
-// Shared entity type (mirrors dxf-document-service Entity)
+// 공유 엔티티 타입 (dxf-document-service의 Entity와 동일)
 interface Entity {
   id: string;
   type: string;
@@ -11,7 +11,7 @@ interface Entity {
   [key: string]: unknown;
 }
 
-// Event types
+// 이벤트 타입
 interface EntityCheckoutStartedEvent {
   type: "entity.checkout.started";
   documentId: string;
@@ -72,7 +72,7 @@ type CollaborationEvent =
 
 type EventListener = (event: CollaborationEvent) => void;
 
-// Input types
+// 입력 타입
 interface BeginEntityEditInput {
   documentId: string;
   entityId: string;
@@ -99,7 +99,7 @@ interface CancelEntityEditInput {
   userId: string;
 }
 
-// Internal types
+// 내부 타입
 interface Checkout {
   documentId: string;
   entityId: string;

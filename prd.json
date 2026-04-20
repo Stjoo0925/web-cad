@@ -1,110 +1,101 @@
 {
-  "version": "4.0",
+  "version": "5.0",
   "stories": [
     {
-      "id": "US-401",
-      "description": "Block insert - insert block/reference entities",
+      "id": "US-501",
+      "description": "Undo/Redo system - Ctrl+Z undo, Ctrl+Y redo",
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "acceptanceCriteria": [
-        "BLOCK 툴 버튼 클릭 시 블록 삽입 모드 활성화",
-        "블록 정의에서 엔티티 목록 선택",
-        "선택한 위치에 블록 인스턴스 생성",
-        "BlockEntity 타입 supported in renderer"
+        "엔티티 생성/수정/삭제 시 히스토리 기록",
+        "Ctrl+Z로 실행취소",
+        "Ctrl+Y 또는 Ctrl+Shift+Z로 다시실행",
+        "히스토리 스택 제한 (50단계)"
       ],
       "files": [
-        "packages/sdk-react/src/tools/block-tool.ts",
+        "packages/sdk-react/src/state/editor-store.ts",
+        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+      ],
+      "verification": "작업 취소 후 다시 실행 가능"
+    },
+    {
+      "id": "US-502",
+      "description": "Delete key - delete selected entities",
+      "priority": 2,
+      "passes": true,
+      "acceptanceCriteria": [
+        "Delete 키로 선택된 엔티티 삭제",
+        "Delete 버튼/아이콘도 동일 동작",
+        "삭제 전 확인 없음 (즉시 삭제)"
+      ],
+      "files": [
+        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+      ],
+      "verification": "선택된 엔티티 Delete 키로 삭제됨"
+    },
+    {
+      "id": "US-503",
+      "description": "Keyboard shortcuts - tool switching shortcuts",
+      "priority": 3,
+      "passes": true,
+      "acceptanceCriteria": [
+        "S = Select, L = Line, C = Circle, A = Arc, P = Polyline",
+        "M = Move, RO = Rotate, SC = Scale, O = Offset",
+        "ESC = Cancel current operation / Deselect",
+        "Delete = Delete selected"
+      ],
+      "files": [
+        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+      ],
+      "verification": "단축키로 도구 전환됨"
+    },
+    {
+      "id": "US-504",
+      "description": "Snap settings panel - endpoint/midpoint/center toggles",
+      "priority": 4,
+      "passes": true,
+      "acceptanceCriteria": [
+        "스냅 타입별 토글 버튼 UI",
+        "Endpoint, Midpoint, Intersection, Center, Perpendicular, Tangent",
+        "설정이 스냅 엔진에 적용됨"
+      ],
+      "files": [
+        "packages/sdk-react/src/components/SnapSettings.tsx",
+        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+      ],
+      "verification": "각 스냅 타입 개별적으로 켜고 끄기 가능"
+    },
+    {
+      "id": "US-505",
+      "description": "Distance/area measurement tool",
+      "priority": 5,
+      "passes": true,
+      "acceptanceCriteria": [
+        "DI 命令 또는 Measure 툴로 거리 측정",
+        "엔티티 클릭하여 길이/면적 표시",
+        "결과를 화면에 오버레이로 표시"
+      ],
+      "files": [
+        "packages/sdk-react/src/tools/measure-tool.ts",
+        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+      ],
+      "verification": "선택한 엔티티의 길이/면적이 표시됨"
+    },
+    {
+      "id": "US-506",
+      "description": "Grid spacing settings - adjustable grid size",
+      "priority": 6,
+      "passes": true,
+      "acceptanceCriteria": [
+        "그리드 크기 설정 (10, 50, 100 등)",
+        "설정 패널 또는 줌 레벨 자동 조정",
+        "현재 그리드 크기 표시"
+      ],
+      "files": [
         "packages/sdk-react/src/canvas/cad-canvas-renderer.ts",
         "packages/sdk-react/src/CadPointCloudEditor.tsx"
       ],
-      "verification": "블록 선택 후 캔버스에 블록 인스턴스 생성됨"
-    },
-    {
-      "id": "US-402",
-      "description": "DXF export - export entities to DXF format",
-      "priority": 2,
-      "passes": false,
-      "acceptanceCriteria": [
-        "ExportDialog에 DXF 포맷 옵션 추가",
-        "엔티티를 DXF ASCII 포맷으로 변환",
-        "LINE, CIRCLE, ARC, POLYLINE 엔티티 내보내기",
-        "파일 다운로드 정상 동작"
-      ],
-      "files": [
-        "packages/sdk-react/src/components/ExportDialog.tsx",
-        "packages/sdk-react/src/export/dxf-exporter.ts",
-        "packages/sdk-react/src/CadPointCloudEditor.tsx"
-      ],
-      "verification": "DXF 파일 다운로드하여 CAD 소프트웨어에서 열림"
-    },
-    {
-      "id": "US-403",
-      "description": "DXF import - import DXF files",
-      "priority": 3,
-      "passes": false,
-      "acceptanceCriteria": [
-        "Import 버튼 또는 드래그앤드롭으로 DXF 파일 입력",
-        "DXF 파싱하여 엔티티 리스트 생성",
-        "파싱된 엔티티를 canvas에 렌더링",
-        "기본 레이어에 할당"
-      ],
-      "files": [
-        "packages/sdk-react/src/components/ImportDialog.tsx",
-        "packages/sdk-react/src/import/dxf-importer.ts",
-        "packages/sdk-react/src/CadPointCloudEditor.tsx"
-      ],
-      "verification": "DXF 파일 가져와서 캔버스에 표시됨"
-    },
-    {
-      "id": "US-404",
-      "description": "Multiple entity selection - shift+click multi-select",
-      "priority": 4,
-      "passes": false,
-      "acceptanceCriteria": [
-        "Shift+Click로 여러 엔티티 선택 추가",
-        "Ctrl+Click로 토글 선택",
-        "選択解除 support",
-        "multi-selected entities have correct rendering"
-      ],
-      "files": [
-        "packages/sdk-react/src/tools/select-tool.ts",
-        "packages/sdk-react/src/CadPointCloudEditor.tsx"
-      ],
-      "verification": "여러 엔티티 Shift+Click으로 선택됨"
-    },
-    {
-      "id": "US-405",
-      "description": "Selection box - drag rectangle to select multiple",
-      "priority": 5,
-      "passes": false,
-      "acceptanceCriteria": [
-        "드래그로 사각형 선택 영역 생성",
-        "框内 엔티티 자동 선택",
-        "Shift+Drag로 현재 선택에 추가",
-        "선택 박스 시각적 피드백"
-      ],
-      "files": [
-        "packages/sdk-react/src/CadCanvasLayer.tsx",
-        "packages/sdk-react/src/tools/select-tool.ts"
-      ],
-      "verification": "드래그한 영역 내 엔티티들이 선택됨"
-    },
-    {
-      "id": "US-406",
-      "description": "Scale command - scale entities by factor",
-      "priority": 6,
-      "passes": false,
-      "acceptanceCriteria": [
-        "SCALE 툴 버튼 클릭 시 스케일 모드 활성화",
-        "기준점 선택",
-        "스케일 팩터 입력 (숫자 또는 두 포인트 비율)",
-        "엔티티들이 스케일 변환됨"
-      ],
-      "files": [
-        "packages/sdk-react/src/tools/scale-tool.ts",
-        "packages/sdk-react/src/CadPointCloudEditor.tsx"
-      ],
-      "verification": "엔티티가 指定比例로 확대/축소됨"
+      "verification": "그리드 크기 변경 시 캔버스에 반영됨"
     }
   ]
 }

@@ -48,6 +48,7 @@ export interface Point {
 export interface Entity {
   id: string;
   type: string;
+  position?: Point;
   start?: Point;
   end?: Point;
   vertices?: Point[];
@@ -233,7 +234,7 @@ function getIntersectionSnapPoints(entity1: Entity, entity2: Entity): Point[] {
   }
 
   if ((entity1.type === "POLYLINE" || entity1.type === "LWPOLYLINE") &&
-      (entity2.type === "POLYLINE" || entity2.type === "LWPOLYLINE")) {
+    (entity2.type === "POLYLINE" || entity2.type === "LWPOLYLINE")) {
     if (entity1.vertices && entity2.vertices) {
       for (let i = 0; i < entity1.vertices.length - 1; i++) {
         for (let j = 0; j < entity2.vertices.length - 1; j++) {
@@ -504,6 +505,7 @@ export function createSnapEngine(options: SnapEngineOptions = {}) {
               point: ep,
               type: SNAP_TYPES.ENDPOINT,
               distance: dist,
+              priority: SNAP_PRIORITY[SNAP_TYPES.ENDPOINT],
               entityId: entity.id
             });
           }
@@ -519,6 +521,7 @@ export function createSnapEngine(options: SnapEngineOptions = {}) {
               point: mp,
               type: SNAP_TYPES.MIDPOINT,
               distance: dist,
+              priority: SNAP_PRIORITY[SNAP_TYPES.MIDPOINT],
               entityId: entity.id
             });
           }

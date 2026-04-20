@@ -34,7 +34,7 @@ export interface OffsetCommand {
 }
 
 /**
- * 점pamam直線の距離計算
+ * 점에서 직선까지의 거리를 계산합니다.
  */
 function pointToLineDistance(point: Point, lineStart: Point, lineEnd: Point): number {
   const dx = lineEnd.x - lineStart.x;
@@ -45,7 +45,7 @@ function pointToLineDistance(point: Point, lineStart: Point, lineEnd: Point): nu
 }
 
 /**
- * OFFPamam平行線生成
+ * 평행선을 생성합니다.
  */
 function offsetLine(entity: Entity, distance: number, side: number): Entity | null {
   if (entity.type !== "LINE" || !entity.start || !entity.end) return null;
@@ -56,7 +56,7 @@ function offsetLine(entity: Entity, distance: number, side: number): Entity | nu
 
   if (len < 1e-10) return null;
 
-  // Calculate normal vector (perpendicular)
+  // 법선 벡터 계산 (수직 방향)
   const nx = (-dy / len) * distance * side;
   const ny = (dx / len) * distance * side;
 
@@ -165,7 +165,7 @@ export function createOffsetCommand(
   function confirm() {
     if (selection.length === 0 || distance <= 0) return;
 
-    // Determine side based on current mouse position relative to entity
+    // 현재 마우스 위치가 엔티티 기준 어느 쪽에 있는지 판단
     let side = 1;
     if (currentPoint && selection[0].start && selection[0].end) {
       const dist = pointToLineDistance(
@@ -173,7 +173,7 @@ export function createOffsetCommand(
         selection[0].start,
         selection[0].end,
       );
-      // Side determination based on which side the reference point is on
+      // 기준점이 어느 쪽에 있는지에 따른 방향 결정
       const midX = (selection[0].start.x + selection[0].end.x) / 2;
       const midY = (selection[0].start.y + selection[0].end.y) / 2;
       const toRefX = (referencePoint?.x || 0) - midX;

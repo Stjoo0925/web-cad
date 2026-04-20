@@ -36,7 +36,7 @@ function lineLineIntersection(
   const dy2 = b2.y - b1.y;
 
   const denom = dx1 * dy2 - dy1 * dx2;
-  if (Math.abs(denom) < 1e-10) return null; // Parallel
+  if (Math.abs(denom) < 1e-10) return null; // 평행
 
   const t = ((b1.x - a1.x) * dy2 - (b1.y - a1.y) * dx2) / denom;
   const u = ((b1.x - a1.x) * dy1 - (b1.y - a1.y) * dx1) / denom;
@@ -51,7 +51,7 @@ function lineLineIntersection(
 }
 
 /**
- * 선分と 원의 교차점을 구합니다.
+ * 선분과 원의 교차점을 구합니다.
  */
 function lineCircleIntersection(
   lineStart: Point,
@@ -120,8 +120,8 @@ function findNearestIntersection(
   let intersections: Point[] = [];
 
   if (entity.type === "LINE" && entity.start && entity.end) {
-    // For a line target, find intersections with the cutting edge
-    // This is handled differently - we need to trim based on projection
+    // 선 대상의 경우, cutting edge와의 교차점을 찾습니다
+    // 투영 기반으로 잘라내야 하므로 다르게 처리
   }
 
   return null;
@@ -131,7 +131,7 @@ function findNearestIntersection(
  * 엔티티를 cutting edge까지 트림합니다.
  */
 function trimEntity(entity: Entity, cuttingEdge: Entity, trimPoint: Point): Entity {
-  // For lines, trim start or end point to be closest to trimPoint
+  // 선의 경우, trimPoint에 가장 가까운 시작점 또는 끝점을 자름
   if (entity.type === "LINE" && entity.start && entity.end) {
     const distToStart = Math.hypot(trimPoint.x - entity.start.x, trimPoint.y - entity.start.y);
     const distToEnd = Math.hypot(trimPoint.x - entity.end.x, trimPoint.y - entity.end.y);
@@ -143,7 +143,7 @@ function trimEntity(entity: Entity, cuttingEdge: Entity, trimPoint: Point): Enti
     }
   }
 
-  // For polylines, trim the nearest vertex
+  // 폴리라인의 경우, 가장 가까운 버텍스를 자름
   if (
     (entity.type === "POLYLINE" || entity.type === "LWPOLYLINE") &&
     entity.vertices
@@ -184,8 +184,8 @@ export function createTrimTool(options: TrimToolOptions = {}) {
    */
   function handleClick(point: Point, entities: Entity[]): Entity[] | null {
     if (!state.isPending) {
-      // First click: select cutting edge
-      // Find entity at point that can serve as cutting edge
+      // 첫 번째 클릭: cutting edge 선택
+      // 해당 지점에서 cutting edge로 사용할 수 있는 엔티티 찾기
       const hitEntity = entities.find((e) => {
         if (e.type === "LINE" && e.start && e.end) {
           const closest = closestPointOnSegment(point, e.start, e.end);
@@ -200,7 +200,7 @@ export function createTrimTool(options: TrimToolOptions = {}) {
       }
       return null;
     } else {
-      // Second click: select target entity to trim
+      // 두 번째 클릭: 잘라낼 대상 엔티티 선택
       if (!state.cuttingEdge) return null;
 
       const targetEntity = entities.find((e) => {
@@ -215,7 +215,7 @@ export function createTrimTool(options: TrimToolOptions = {}) {
       if (targetEntity) {
         state.targetEntity = targetEntity;
 
-        // Find intersection point between target and cutting edge
+        // 대상과 cutting edge 사이의 교차점 찾기
         let trimPoint: Point | null = null;
 
         if (
@@ -242,7 +242,7 @@ export function createTrimTool(options: TrimToolOptions = {}) {
             onComplete(result);
           }
 
-          // Reset
+          // 초기화
           state.cuttingEdge = null;
           state.targetEntity = null;
           state.isPending = false;
@@ -251,7 +251,7 @@ export function createTrimTool(options: TrimToolOptions = {}) {
         }
       }
 
-      // Reset if no valid target
+      // 유효한 대상이 없으면 초기화
       state.cuttingEdge = null;
       state.isPending = false;
       return null;

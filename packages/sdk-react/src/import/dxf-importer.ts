@@ -2,7 +2,7 @@
  * dxf-importer.ts
  * DXF 파일을 엔티티로 가져오는 모듈
  *
- * File API와既存の dxf-parser를 사용합니다.
+ * File API와 기존 dxf-parser를 사용합니다.
  */
 
 import type { Entity } from "../canvas/cad-canvas-renderer.js";

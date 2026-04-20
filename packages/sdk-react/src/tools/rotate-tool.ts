@@ -2,7 +2,7 @@
  * rotate-tool.ts
  * 회전(ROTATE) 도구 모듈
  *
- * 선택된 엔티티들을 지정된 중심점を中心に指定角度だけ回転します。
+ * 선택된 엔티티들을 지정된 중심점을 중심으로 지정된 각도만큼 회전합니다.
  * 첫 번째 클릭: 회전 중심점
  * 두 번째 클릭: 회전 각도 결정 (기준 방향)
  */
@@ -84,7 +84,7 @@ export function createRotateTool(options: RotateToolOptions = {}) {
           ),
         };
       case "CIRCLE":
-        // Circles don't rotate internally, but center moves
+        // 원은 내부적으로 회전하지 않지만 중심이 이동함
         return {
           ...entity,
           center: entity.center
@@ -126,19 +126,19 @@ export function createRotateTool(options: RotateToolOptions = {}) {
     selectedEntities: Entity[],
   ): Entity[] | null {
     if (!state.isPending) {
-      // First click: set center point
+      // 첫 번째 클릭: 중심점 설정
       state.centerPoint = { ...point };
       state.referencePoint = { ...point };
       state.isPending = true;
       state.selectedEntities = selectedEntities;
       return null;
     } else {
-      // Second click: calculate angle and rotate
+      // 두 번째 클릭: 각도 계산 및 회전
       state.referencePoint = { ...point };
 
       if (!state.centerPoint || !state.referencePoint) return null;
 
-      // Calculate angle from center to reference point
+      // 중심에서 기준점까지의 각도 계산
       const angleRad = Math.atan2(
         state.referencePoint.y - state.centerPoint.y,
         state.referencePoint.x - state.centerPoint.x,
@@ -152,7 +152,7 @@ export function createRotateTool(options: RotateToolOptions = {}) {
         onComplete(rotatedEntities);
       }
 
-      // Reset state
+      // 상태 초기화
       state.centerPoint = null;
       state.referencePoint = null;
       state.isPending = false;

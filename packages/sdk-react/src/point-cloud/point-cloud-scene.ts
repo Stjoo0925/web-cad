@@ -52,7 +52,7 @@ export interface SceneOptions {
 }
 
 /**
- * Transform a point using origin offset (world to local coordinates)
+ * 원점 오프셋을 사용하여 점을 변환합니다 (월드 좌표에서 로컬 좌표로)
  */
 function worldToLocal(point: Point3D, origin: Point3D): Point3D {
   return {
@@ -89,7 +89,7 @@ export function createScene(options: SceneOptions = {}): {
 
   let material: MaterialMock | null = null;
   let positions: Float32Array | null = null;
-  let colors: Float32Array | null = null;
+  let colors: Float32Array | undefined = undefined;
 
   function addPoints(data: PointCloudData): SceneResult {
     const { positions: pos, colors: col, bbox } = data;
@@ -161,7 +161,7 @@ export function createScene(options: SceneOptions = {}): {
   function dispose() {
     material = null;
     positions = null;
-    colors = null;
+    colors = undefined;
   }
 
   return {

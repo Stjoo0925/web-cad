@@ -121,32 +121,34 @@ export function createTrimCommand(
   let state: TrimCommandState = "selecting";
   let cuttingEdges: Entity[] = [];
   let trimTargets: Entity[] = [];
+  let lastClickPoint: Point = { x: 0, y: 0 };
 
   function setState(newState: TrimCommandState) {
     state = newState;
   }
 
   function handleClick(screenPoint: Point) {
+    lastClickPoint = screenPoint;
     switch (state) {
       case "selecting":
-        // Enter cutting edge selection mode
+        // 잘라내기 경계선 선택 모드로 전환
         setState("cutting-edge");
         break;
 
       case "cutting-edge":
-        // Add entity as cutting edge
-        // User clicks to select cutting edge entities
-        // Then clicks to confirm and move to trim target selection
+        // 엔티티를 잘라내기 경계선으로 추가
+        // 사용자가 잘라내기 경계선 엔티티를 선택하도록 클릭
+        // 그 다음 확인 클릭 후 대상 선택으로 이동
         break;
 
       case "trim-target":
-        // Trim at the clicked point
+        // 클릭한 위치에서 자르기
         break;
     }
   }
 
   function handleMove(screenPoint: Point) {
-    // Preview could show trim point
+    // 미리보기에 자르기 포인트 표시 가능
   }
 
   function confirm() {
@@ -156,7 +158,7 @@ export function createTrimCommand(
 
     for (const target of trimTargets) {
       if (target.type === "LINE" && target.start && target.end) {
-        // Find all intersection points with cutting edges
+        // cutting edge와의 모든 교차점 찾기
         const allIntersections: { point: Point; dist: number }[] = [];
 
         for (const edge of cuttingEdges) {
@@ -166,31 +168,34 @@ export function createTrimCommand(
             edge,
           );
           for (const pt of intersections) {
-            const dist = Math.hypot(pt.x - target.start.x, pt.y - target.start.y);
+            const dist = Math.hypot(
+              pt.x - target.start.x,
+              pt.y - target.start.y,
+            );
             allIntersections.push({ point: pt, dist });
           }
         }
 
         if (allIntersections.length === 0) continue;
 
-        // Sort by distance from start point
+        // 시작점에서의 거리로 정렬
         allIntersections.sort((a, b) => a.dist - b.dist);
 
-        // Keep first segment (from start to first intersection)
+        // 첫 번째 세그먼트 유지 (시작점부터 첫 교차점까지)
         const firstInt = allIntersections[0].point;
-        const side = getPointSide(screenPoint, target.start, target.end);
+        const side = getPointSide(lastClickPoint, target.start, target.end);
 
         if (allIntersections.length === 1) {
-          // Single intersection - trim to that point
+          // 단일 교차점 - 해당 지점까지 자름
           if (side >= 0) {
-            // Keep start portion
+            // 시작 부분 유지
             results.push({
               type: "UPDATE_ENTITY",
               entityId: target.id || "",
               params: { start: target.start, end: firstInt },
             });
           } else {
-            // Keep end portion
+            // 끝 부분 유지
             results.push({
               type: "UPDATE_ENTITY",
               entityId: target.id || "",
@@ -198,7 +203,7 @@ export function createTrimCommand(
             });
           }
         } else if (allIntersections.length >= 2) {
-          // Multiple intersections - this implementation keeps the first segment
+          // 다중 교차점 - 이 구현은 첫 번째 세그먼트 유지
           const secondInt = allIntersections[1].point;
           if (side >= 0) {
             results.push({
@@ -219,10 +224,7 @@ export function createTrimCommand(
             });
           }
         }
-      } else if (
-        target.type === "POLYLINE" ||
-        target.type === "LWPOLYLINE"
-      ) {
+      } else if (target.type === "POLYLINE" || target.type === "LWPOLYLINE") {
         if (!target.vertices) continue;
 
         const newVertices: Point[] = [];
@@ -235,7 +237,7 @@ export function createTrimCommand(
             currentSegment.push(v);
           }
 
-          // Check if next vertex exists
+          // 다음 버텍스가 있는지 확인
           if (i < target.vertices.length - 1) {
             const nextV = target.vertices[i + 1];
             let hasIntersection = false;
@@ -263,7 +265,7 @@ export function createTrimCommand(
           keptSegments.push(currentSegment);
         }
 
-        // For simplicity, return first kept segment as update
+        // 간단히 첫 번째 유지 세그먼트를 업데이트로 반환
         if (keptSegments.length > 0 && keptSegments[0].length >= 2) {
           results.push({
             type: "UPDATE_ENTITY",

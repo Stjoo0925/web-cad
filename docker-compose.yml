@@ -1,47 +1,182 @@
+# docker-compose.yml
+# Web CAD 온프렘 서비스 구성
+#
+# 사용법:
+#   cp .env.example .env     # 환경변수 설정
+#   docker-compose up -d      # 전체 서비스 시작
+#   docker-compose ps         # 서비스 상태 확인
+#   docker-compose logs -f    # 로그 확인
+#   docker-compose down       # 서비스 중지
+#
+# 원클릭 시작:
+#   docker-compose up -d --build
+
 services:
+  # =====================================================================
+  # PostgreSQL 데이터베이스
+  # =====================================================================
+  db:
+    image: postgres:16-alpine
+    container_name: webcad-db
+    environment:
+      POSTGRES_USER: ${WEB_CAD_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${WEB_CAD_DB_PASSWORD:-webcad_password}
+      POSTGRES_DB: ${WEB_CAD_DB_NAME:-webcad}
+    ports:
+      - "${WEB_CAD_DB_PORT:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${WEB_CAD_DB_USER:-postgres} -d ${WEB_CAD_DB_NAME:-webcad}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # =====================================================================
+  # API 서버
+  # =====================================================================
   api:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: webcad-api
     command: ["node", "apps/server/src/api-server.js"]
     environment:
       PORT: 4010
-      WEB_CAD_JWT_SECRET: ${WEB_CAD_JWT_SECRET:-change-me}
+      NODE_ENV: production
+      WEB_CAD_JWT_SECRET: ${WEB_CAD_JWT_SECRET}
       WEB_CAD_JWT_ISSUER: ${WEB_CAD_JWT_ISSUER:-web-cad-onprem}
       WEB_CAD_STORAGE_ROOT_CONTAINER: ${WEB_CAD_STORAGE_ROOT_CONTAINER:-/app/storage}
+      WEB_CAD_DB_HOST: db
+      WEB_CAD_DB_PORT: 5432
+      WEB_CAD_DB_USER: ${WEB_CAD_DB_USER:-postgres}
+      WEB_CAD_DB_PASSWORD: ${WEB_CAD_DB_PASSWORD:-webcad_password}
+      WEB_CAD_DB_NAME: ${WEB_CAD_DB_NAME:-webcad}
     ports:
-      - "4010:4010"
+      - "${WEB_CAD_API_PORT:-4010}:4010"
     volumes:
-      - type: bind
-        source: ${WEB_CAD_STORAGE_ROOT_HOST:-./data}
-        target: ${WEB_CAD_STORAGE_ROOT_CONTAINER:-/app/storage}
+      - storage_data:${WEB_CAD_STORAGE_ROOT_CONTAINER:-/app/storage}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4010/health/live || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
 
+  # =====================================================================
+  # Worker 서비스
+  # =====================================================================
   worker:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: webcad-worker
     command: ["node", "apps/server/src/worker.js"]
     environment:
-      WEB_CAD_JWT_SECRET: ${WEB_CAD_JWT_SECRET:-change-me}
+      NODE_ENV: production
+      WEB_CAD_JWT_SECRET: ${WEB_CAD_JWT_SECRET}
       WEB_CAD_JWT_ISSUER: ${WEB_CAD_JWT_ISSUER:-web-cad-onprem}
       WEB_CAD_STORAGE_ROOT_CONTAINER: ${WEB_CAD_STORAGE_ROOT_CONTAINER:-/app/storage}
+      WEB_CAD_DB_HOST: db
+      WEB_CAD_DB_PORT: 5432
+      WEB_CAD_DB_USER: ${WEB_CAD_DB_USER:-postgres}
+      WEB_CAD_DB_PASSWORD: ${WEB_CAD_DB_PASSWORD:-webcad_password}
+      WEB_CAD_DB_NAME: ${WEB_CAD_DB_NAME:-webcad}
     volumes:
-      - type: bind
-        source: ${WEB_CAD_STORAGE_ROOT_HOST:-./data}
-        target: ${WEB_CAD_STORAGE_ROOT_CONTAINER:-/app/storage}
+      - storage_data:${WEB_CAD_STORAGE_ROOT_CONTAINER:-/app/storage}
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://api:4010/health/live || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
 
+  # =====================================================================
+  # 파일 서버
+  # =====================================================================
   files:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: webcad-files
     command: ["node", "apps/server/src/file-server.js"]
     environment:
       FILE_SERVER_PORT: 4011
+      NODE_ENV: production
       WEB_CAD_STORAGE_ROOT_CONTAINER: ${WEB_CAD_STORAGE_ROOT_CONTAINER:-/app/storage}
     ports:
-      - "4011:4011"
+      - "${WEB_CAD_FILES_PORT:-4011}:4011"
     volumes:
-      - type: bind
-        source: ${WEB_CAD_STORAGE_ROOT_HOST:-./data}
-        target: ${WEB_CAD_STORAGE_ROOT_CONTAINER:-/app/storage}
-        read_only: true
+      - storage_data:${WEB_CAD_STORAGE_ROOT_CONTAINER:-/app/storage}:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4011/health/live || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # =====================================================================
+  # 헬스체크 서버
+  # =====================================================================
+  health:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: webcad-health
+    command: ["node", "apps/server/src/health-server.js"]
+    environment:
+      PORT: 4012
+      NODE_ENV: production
+      HEALTH_PORT: 4012
+    ports:
+      - "${WEB_CAD_HEALTH_PORT:-4012}:4012"
+    depends_on:
+      api:
+        condition: service_healthy
+      files:
+        condition: service_healthy
+      worker:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4012/health/live || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+# =====================================================================
+# 볼륨 정의
+# =====================================================================
+volumes:
+  db_data:
+    driver: local
+  storage_data:
+    driver: local
+
+# =====================================================================
+# 네트워크
+# =====================================================================
+networks:
+  default:
+    name: webcad-network
+    driver: bridge

@@ -143,9 +143,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.web
+      args:
+        VITE_NAVER_MAP_CLIENT_ID: ${VITE_NAVER_MAP_CLIENT_ID:-}
     container_name: webcad-web
     ports:
       - "${WEB_CAD_WEB_PORT:-3001}:3000"
+    environment:
+      VITE_NAVER_MAP_CLIENT_ID: ${VITE_NAVER_MAP_CLIENT_ID:-}
     depends_on:
       api:
         condition: service_healthy

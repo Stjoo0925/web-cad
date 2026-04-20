@@ -5,6 +5,10 @@ WORKDIR /app
 # curl for healthcheck
 RUN apk add --no-cache curl
 
+# Build argument for NAVER Map Client ID
+ARG VITE_NAVER_MAP_CLIENT_ID
+ENV VITE_NAVER_MAP_CLIENT_ID=$VITE_NAVER_MAP_CLIENT_ID
+
 COPY . .
 
 # Install web app dependencies

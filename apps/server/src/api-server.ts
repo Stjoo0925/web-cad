@@ -52,6 +52,20 @@ function createSseSession(response: http.ServerResponse): void {
   response.write("\n");
 }
 
+interface Entity {
+  id: string;
+  type: string;
+  [key: string]: unknown;
+}
+
+interface CollaborationEvent {
+  type: string;
+  documentId: string;
+  entityId?: string;
+  userId?: string;
+  startedAt?: string;
+}
+
 interface SseClient {
   response: http.ServerResponse;
 }
@@ -62,7 +76,7 @@ const runtime: Runtime = await createRuntime({
 
 const sseClients = new Map<string, SseClient[]>();
 
-runtime.sessionManager.subscribe((event) => {
+runtime.sessionManager.subscribe((event: CollaborationEvent) => {
   const clients = sseClients.get(event.documentId) ?? [];
   for (const client of clients) {
     client.response.write(`data: ${JSON.stringify(event)}\n\n`);
@@ -83,7 +97,7 @@ const server = http.createServer(async (request, response) => {
 
     if (request.method === "POST" && pathname === "/api/tokens/issue") {
       const body = await readJson(request) as { userId?: string };
-      const token = runtime.tokenService.issueToken({ userId: body.userId ?? "anonymous" });
+      const token = runtime.tokenService.issueToken({ userId: body.userId ?? "anonymous", documentId: undefined });
       return jsonResponse(response, 200, { token });
     }
 
@@ -92,7 +106,7 @@ const server = http.createServer(async (request, response) => {
       const documentId = body.documentId ?? crypto.randomUUID();
       await runtime.documentService.createDocument({
         documentId,
-        pointCloudReference: body.pointCloudReference ?? null
+        pointCloudReference: body.pointCloudReference !== undefined ? body.pointCloudReference : null
       });
       return jsonResponse(response, 201, { documentId });
     }
@@ -190,7 +204,7 @@ const server = http.createServer(async (request, response) => {
         documentId: commitParams.documentId,
         entityId: commitParams.entityId,
         userId: payload.userId,
-        entity: body.entity
+        entity: body.entity as Entity
       });
       await runtime.documentService.appendEvent({
         documentId: commitParams.documentId,

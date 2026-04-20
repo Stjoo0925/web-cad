@@ -4,16 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test --experimental-test-isolation=none tests/*.test.js",
+    "test": "tsx --test tests/*.test.ts",
     "dev:web": "node apps/web/dev-server.js",
-    "start:api": "node apps/server/src/api-server.js",
-    "start:worker": "node apps/server/src/worker.js",
-    "start:files": "node apps/server/src/file-server.js"
+    "start:api": "tsx apps/server/src/api-server.ts",
+    "start:worker": "tsx apps/server/src/worker.ts",
+    "start:files": "tsx apps/server/src/file-server.ts"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.3"
-  }
+  },
+  "test": "tsx --test tests/*.test.ts"
 }

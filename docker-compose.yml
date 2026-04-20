@@ -47,7 +47,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: webcad-api
-    command: ["node", "apps/server/src/api-server.ts"]
+    command: ["npx", "tsx", "apps/server/src/api-server.ts"]
     environment:
       PORT: 4010
       NODE_ENV: production
@@ -82,7 +82,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: webcad-worker
-    command: ["node", "apps/server/src/worker.js"]
+    command: ["npx", "tsx", "apps/server/src/worker.ts"]
     environment:
       NODE_ENV: production
       WEB_CAD_JWT_SECRET: ${WEB_CAD_JWT_SECRET}
@@ -116,7 +116,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: webcad-files
-    command: ["node", "apps/server/src/file-server.js"]
+    command: ["npx", "tsx", "apps/server/src/file-server.ts"]
     environment:
       FILE_SERVER_PORT: 4011
       NODE_ENV: production
@@ -165,7 +165,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: webcad-health
-    command: ["node", "apps/server/src/health-server.js"]
+    command: ["npx", "tsx", "apps/server/src/health-server.ts"]
     environment:
       PORT: 4012
       NODE_ENV: production

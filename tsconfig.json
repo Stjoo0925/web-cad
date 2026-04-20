@@ -13,8 +13,9 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true,
+    "allowJs": true,
     "types": ["node"]
   },
   "include": ["apps/**/*"],
-  "exclude": ["node_modules", "apps/web/dist", "dist"]
+  "exclude": ["node_modules", "apps/web/dist", "apps/web/src", "dist"]
 }

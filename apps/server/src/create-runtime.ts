@@ -10,24 +10,30 @@ import { AssetIngestWorker } from "../../../packages/core/src/workers/asset-inge
 
 export interface Runtime {
   rootDir: string;
-  storage: InstanceType<typeof LocalStorageService>;
-  tokenService: InstanceType<typeof TokenService>;
-  documentService: InstanceType<typeof DxfDocumentService>;
-  sessionManager: InstanceType<typeof CollaborationSessionManager>;
-  ingestWorker: InstanceType<typeof AssetIngestWorker>;
+  storage: LocalStorageService;
+  tokenService: TokenService;
+  documentService: DxfDocumentService;
+  sessionManager: CollaborationSessionManager;
+  ingestWorker: AssetIngestWorker;
 }
 
-export async function createRuntime({ rootDir }: { rootDir?: string } = {}): Promise<Runtime> {
+interface CreateRuntimeOptions {
+  rootDir?: string;
+}
+
+export async function createRuntime(
+  options: CreateRuntimeOptions = {}
+): Promise<Runtime> {
   const resolvedRootDir = resolveStorageRoot({
-    rootDir,
-    cwd: path.resolve(process.cwd())
+    storageRootEnv: options.rootDir,
+    cwd: path.resolve(process.cwd()),
   });
   await mkdir(resolvedRootDir, { recursive: true });
 
   const storage = new LocalStorageService({ rootDir: resolvedRootDir });
   const tokenService = new TokenService({
     secret: process.env.WEB_CAD_JWT_SECRET ?? "change-me",
-    issuer: process.env.WEB_CAD_JWT_ISSUER ?? "web-cad-onprem"
+    issuer: process.env.WEB_CAD_JWT_ISSUER ?? "web-cad-onprem",
   });
   const documentService = new DxfDocumentService({ storage });
   const sessionManager = new CollaborationSessionManager();
@@ -39,6 +45,6 @@ export async function createRuntime({ rootDir }: { rootDir?: string } = {}): Pro
     tokenService,
     documentService,
     sessionManager,
-    ingestWorker
+    ingestWorker,
   };
 }

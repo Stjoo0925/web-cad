@@ -1,10 +1,13 @@
-import React, { useState, useCallback, useRef, useMemo } from "react";
+import React, { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { CadCanvasLayer } from "./canvas/CadCanvasLayer.js";
 import { ExportDialog } from "./components/ExportDialog.js";
 import type { Viewport, Point } from "./canvas/cad-canvas-renderer.js";
 import type { Entity } from "./canvas/cad-canvas-renderer.js";
 import { createSnapEngine } from "./tools/snap-engine.js";
+import { createEntityHistory } from "./state/entity-history.js";
+import { createMeasureTool } from "./tools/measure-tool.js";
 import { createCircleTool } from "./tools/circle-tool.js";
+import { SnapSettings } from "./components/SnapSettings.js";
 import { createArcTool } from "./tools/arc-tool.js";
 import { createTextTool } from "./tools/text-tool.js";
 import { createPointTool } from "./tools/point-tool.js";
@@ -51,7 +54,8 @@ type ToolType =
   | "copy"
   | "offset"
   | "trim"
-  | "extend";
+  | "extend"
+  | "measure";
 
 interface SnapIndicator {
   point: Point;
@@ -282,6 +286,20 @@ const Icons = {
       <path d="M2 4L8 8L14 4" />
       <path d="M2 8L8 12L14 8" />
       <path d="M2 12L8 4L14 12" />
+    </svg>
+  ),
+  Measure: () => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <line x1="3" y1="17" x2="17" y2="3" />
+      <line x1="3" y1="12" x2="7" y2="12" />
+      <line x1="3" y1="7" x2="12" y2="7" />
     </svg>
   ),
 };
@@ -551,10 +569,24 @@ export function CadPointCloudEditor({
   );
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(true);
+  const [snapTypes, setSnapTypes] = useState({
+    endpoint: true,
+    midpoint: true,
+    intersection: true,
+    center: true,
+    perpendicular: false,
+    tangent: false,
+  });
   const [activeTab, setActiveTab] = useState("Home");
   const [showLayers, setShowLayers] = useState(true);
   const [cursorWorld, setCursorWorld] = useState({ x: 0, y: 0 });
   const [showExport, setShowExport] = useState(false);
+  const [measurement, setMeasurement] = useState<{
+    type: string;
+    value: number;
+    label: string;
+  } | null>(null);
+  const [gridSize, setGridSize] = useState(50);
   const [layers, setLayers] = useState<
     Array<{ name: string; visible?: boolean; locked?: boolean }>
   >([
@@ -584,6 +616,9 @@ export function CadPointCloudEditor({
   const [activeLayer, setActiveLayer] = useState<string | null>("0");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Entity history for undo/redo
+  const historyRef = useRef(createEntityHistory());
+
   // Tool instances
   const circleToolRef = useRef(createCircleTool({}));
   const arcToolRef = useRef(createArcTool({}));
@@ -599,8 +634,15 @@ export function CadPointCloudEditor({
   const extendToolRef = useRef(createExtendTool({}));
   const scaleToolRef = useRef(createScaleTool({}));
 
+  // Measure tool
+  const measureToolRef = useRef(createMeasureTool());
+
   // Snap engine
   const snapEngineRef = useRef(createSnapEngine({ tolerance: 12 }));
+
+  const handleSnapTypeToggle = useCallback((type: string) => {
+    setSnapTypes((prev) => ({ ...prev, [type]: !prev[type as keyof typeof prev] }));
+  }, []);
 
   const handleViewportChange = useCallback((newViewport: Viewport) => {
     setViewport(newViewport);
@@ -614,6 +656,73 @@ export function CadPointCloudEditor({
     setCurrentTool(tool);
     setSelectedIds([]);
   }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in inputs
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Delete selected entities
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (selectedIds.length > 0) {
+          // Save to history before deleting
+          historyRef.current.saveToHistory(entities);
+          setEntities((prev) => prev.filter((entity) => !selectedIds.includes(entity.id)));
+          setSelectedIds([]);
+        }
+        return;
+      }
+
+      // Undo (Ctrl+Z)
+      if (e.key === "z" && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        e.preventDefault();
+        const prevEntities = historyRef.current.undo(entities);
+        if (prevEntities) {
+          setEntities(prevEntities);
+          setSelectedIds([]);
+        }
+        return;
+      }
+
+      // Redo (Ctrl+Y or Ctrl+Shift+Z)
+      if ((e.key === "y" && (e.ctrlKey || e.metaKey)) ||
+          (e.key === "z" && (e.ctrlKey || e.metaKey) && e.shiftKey)) {
+        e.preventDefault();
+        const nextEntities = historyRef.current.redo(entities);
+        if (nextEntities) {
+          setEntities(nextEntities);
+          setSelectedIds([]);
+        }
+        return;
+      }
+
+      // ESC = cancel or deselect
+      if (e.key === "Escape") {
+        setSelectedIds([]);
+        return;
+      }
+
+      // Tool shortcuts
+      const key = e.key.toLowerCase();
+      if (e.ctrlKey || e.metaKey) return;
+
+      if (key === "s") setCurrentTool("select");
+      else if (key === "l") setCurrentTool("line");
+      else if (key === "c") setCurrentTool("circle");
+      else if (key === "a") setCurrentTool("arc");
+      else if (key === "p") setCurrentTool("polyline");
+      else if (key === "t") setCurrentTool("text");
+      else if (key === "m") setCurrentTool("move");
+      else if (key === "o") setCurrentTool("offset");
+      else if (key === "di") setCurrentTool("measure");
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedIds]);
 
   const handleEntityCreate = useCallback(
     (type: string, entity: Entity) => {
@@ -914,6 +1023,17 @@ export function CadPointCloudEditor({
           }
           break;
         }
+        case "measure": {
+          const hitEntity = hitTestEntities(visibleEntities, worldPos, viewport);
+          if (hitEntity) {
+            const result = measureToolRef.current.measureEntity(hitEntity);
+            if (result) {
+              setMeasurement({ type: result.type, value: result.value, label: result.label });
+              setSelectedIds([hitEntity.id]);
+            }
+          }
+          break;
+        }
       }
     },
     [
@@ -1146,6 +1266,12 @@ export function CadPointCloudEditor({
               active={currentTool === "scale"}
               onClick={() => handleToolClick("scale")}
             />
+            <ToolButton
+              icon={<Icons.Measure />}
+              label="Measure"
+              shortcut="DI"
+              active={currentTool === "measure"}
+              onClick={() => handleToolClick("measure")}
             />
 
             <div
@@ -1170,6 +1296,28 @@ export function CadPointCloudEditor({
               active={snapEnabled}
               onClick={() => setSnapEnabled(!snapEnabled)}
             />
+
+            <div style={{ flex: 1 }} />
+
+            {/* Grid size control */}
+            <select
+              value={gridSize}
+              onChange={(e) => setGridSize(Number(e.target.value))}
+              style={{
+                background: COLORS.buttonBg,
+                color: COLORS.text,
+                border: "none",
+                borderRadius: "4px",
+                padding: "4px 8px",
+                fontSize: "11px",
+                cursor: "pointer",
+              }}
+            >
+              <option value={10}>Grid: 10</option>
+              <option value={25}>Grid: 25</option>
+              <option value={50}>Grid: 50</option>
+              <option value={100}>Grid: 100</option>
+            </select>
 
             <div style={{ flex: 1 }} />
 
@@ -1336,6 +1484,8 @@ export function CadPointCloudEditor({
               onSelectionBoxEnd={handleSelectionBoxEnd}
               selectedIds={selectedIds}
               canvasRef={canvasRef}
+              snapEnabled={snapEnabled}
+              gridSize={gridSize}
             />
             <SnapOverlay snap={snapIndicator} viewport={viewport} />
           </div>

@@ -1026,7 +1026,7 @@ export function CadPointCloudEditor({
         case "measure": {
           const hitEntity = hitTestEntities(visibleEntities, worldPos, viewport);
           if (hitEntity) {
-            const result = measureToolRef.current.measureEntity(hitEntity);
+            const result = measureToolRef.current.measureEntity(hitEntity, worldPos);
             if (result) {
               setMeasurement({ type: result.type, value: result.value, label: result.label });
               setSelectedIds([hitEntity.id]);

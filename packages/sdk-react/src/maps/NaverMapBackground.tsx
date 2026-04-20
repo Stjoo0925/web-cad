@@ -3,10 +3,10 @@ import { buildNaverMapScriptUrl, createNaverMapOptions, type NaverMapOptions } f
 
 function ensureNaverMapsScript({ naverMapClientId, callbackName }: { naverMapClientId: string; callbackName: string }) {
   if (globalThis.window?.naver?.maps) {
-    return Promise.resolve(globalThis.window.naver.maps);
+    return Promise.resolve(globalThis.window.naver.maps as any);
   }
 
-  return new Promise<typeof globalThis.window.naver.maps>((resolve, reject) => {
+  return new Promise<any>((resolve, reject) => {
     const existingScript = globalThis.document?.querySelector("script[data-sdk='naver-maps']");
     if (existingScript) {
       existingScript.addEventListener("load", () => resolve(globalThis.window?.naver?.maps!));
@@ -14,9 +14,9 @@ function ensureNaverMapsScript({ naverMapClientId, callbackName }: { naverMapCli
       return;
     }
 
-    globalThis.window[callbackName] = () => {
+    (globalThis.window as unknown as Record<string, unknown>)[callbackName] = () => {
       resolve(globalThis.window?.naver?.maps!);
-      delete globalThis.window[callbackName];
+      delete (globalThis.window as unknown as Record<string, unknown>)[callbackName];
     };
 
     const script = globalThis.document.createElement("script");
@@ -25,7 +25,7 @@ function ensureNaverMapsScript({ naverMapClientId, callbackName }: { naverMapCli
     script.src = buildNaverMapScriptUrl({ naverMapClientId, callbackName });
     script.onerror = () => {
       reject(new Error("Failed to load NAVER Maps script"));
-      delete globalThis.window[callbackName];
+      delete (globalThis.window as unknown as Record<string, unknown>)[callbackName];
     };
     globalThis.document.head.appendChild(script);
   });

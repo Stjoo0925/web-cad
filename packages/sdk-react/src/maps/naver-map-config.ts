@@ -2,6 +2,9 @@ export interface NaverMapOptions {
   center?: { lat: number; lng: number };
   zoom?: number;
   mapTypeId?: string;
+  scaleControl?: boolean;
+  logoControl?: boolean;
+  mapDataControl?: boolean;
 }
 
 export interface NaverMapScriptOptions {

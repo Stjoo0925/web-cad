@@ -14,7 +14,7 @@ import { exportCanvas } from "../tools/export-tool.js";
 
 export interface ExportDialogProps {
   /** Reference to the canvas element to export */
-  canvasRef: React.RefObject<HTMLCanvasElement>;
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
   /** Initial format selection */
   initialFormat?: ExportFormat;
   /** Callback when dialog closes */
@@ -39,6 +39,10 @@ const QUALITY_LABELS: Record<PngQuality, string> = {
   0.95: "High quality",
   1.0: "Lossless (largest)",
 };
+
+const QUALITY_OPTIONS: PngQuality[] = Object.keys(QUALITY_LABELS).map(
+  (q) => Number(q) as PngQuality,
+);
 
 const STYLE = {
   overlay: {
@@ -271,7 +275,7 @@ export function ExportDialog({
               value={quality}
               onChange={(e) => setQuality(Number(e.target.value) as PngQuality)}
             >
-              {(Object.keys(QUALITY_LABELS) as PngQuality[]).map((q) => (
+              {QUALITY_OPTIONS.map((q) => (
                 <option key={q} value={q}>
                   {QUALITY_LABELS[q]}
                 </option>

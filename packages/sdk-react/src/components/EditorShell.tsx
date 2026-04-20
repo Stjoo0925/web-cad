@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { RibbonToolbar, type ToolType } from "./RibbonToolbar.js";
-import { LayerPanel, type Layer } from "./LayerPanel.js";
+import { LayerPanel } from "./LayerPanel.js";
+import type { Layer } from "../tools/layer-filter";
 import { PropertiesPanel, type EntityProperty } from "./PropertiesPanel.js";
 import { CommandLine } from "./CommandLine.js";
 import { StatusBar } from "./StatusBar.js";

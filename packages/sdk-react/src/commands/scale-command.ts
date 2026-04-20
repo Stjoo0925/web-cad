@@ -134,35 +134,36 @@ export function createScaleCommand(
   function confirm() {
     if (!center || selection.length === 0) return;
 
+    const centerPoint = center; // 타입 좁히기: null 체크 후 Point 타입 보장
     const results: ScaleCommandResult[] = selection.map((entity) => {
       const params: ScaleCommandResult["params"] = {};
 
       if (entity.start && entity.end) {
         params.start = {
-          x: center.x + (entity.start.x - center.x) * currentFactor,
-          y: center.y + (entity.start.y - center.y) * currentFactor,
+          x: centerPoint.x + (entity.start.x - centerPoint.x) * currentFactor,
+          y: centerPoint.y + (entity.start.y - centerPoint.y) * currentFactor,
         };
         params.end = {
-          x: center.x + (entity.end.x - center.x) * currentFactor,
-          y: center.y + (entity.end.y - center.y) * currentFactor,
+          x: centerPoint.x + (entity.end.x - centerPoint.x) * currentFactor,
+          y: centerPoint.y + (entity.end.y - centerPoint.y) * currentFactor,
         };
       }
       if (entity.position) {
         params.position = {
-          x: center.x + (entity.position.x - center.x) * currentFactor,
-          y: center.y + (entity.position.y - center.y) * currentFactor,
+          x: centerPoint.x + (entity.position.x - centerPoint.x) * currentFactor,
+          y: centerPoint.y + (entity.position.y - centerPoint.y) * currentFactor,
         };
       }
       if (entity.center) {
         params.center = {
-          x: center.x + (entity.center.x - center.x) * currentFactor,
-          y: center.y + (entity.center.y - center.y) * currentFactor,
+          x: centerPoint.x + (entity.center.x - centerPoint.x) * currentFactor,
+          y: centerPoint.y + (entity.center.y - centerPoint.y) * currentFactor,
         };
       }
       if (entity.vertices) {
         params.vertices = entity.vertices.map((v) => ({
-          x: center.x + (v.x - center.x) * currentFactor,
-          y: center.y + (v.y - center.y) * currentFactor,
+          x: centerPoint.x + (v.x - centerPoint.x) * currentFactor,
+          y: centerPoint.y + (v.y - centerPoint.y) * currentFactor,
         }));
       }
       if (entity.radius !== undefined) {

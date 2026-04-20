@@ -36,6 +36,8 @@ export interface LineToolState {
   startPoint: Point | null;
   endPoint: Point | null;
   isDrawing: boolean;
+  /** 연속 실행 모드 - 엔티티 완료 후 다음 선의 시작점으로 계속 */
+  continuousMode: boolean;
 }
 
 export interface LineToolOptions {
@@ -52,7 +54,8 @@ export function createLineTool(options: LineToolOptions = {}) {
   const state: LineToolState = {
     startPoint: null,
     endPoint: null,
-    isDrawing: false
+    isDrawing: false,
+    continuousMode: true, // Continuous mode by default
   };
 
   function handleClick(screenPoint: Point): LineEntity | null {
@@ -79,8 +82,17 @@ export function createLineTool(options: LineToolOptions = {}) {
       }
 
       const result = entity;
-      state.startPoint = null;
-      state.endPoint = null;
+
+      // Continuous drawing mode: start next line from where we just finished
+      // This makes the tool "stay active" for continuous line drawing
+      state.startPoint = { ...screenPoint };
+      state.endPoint = { ...screenPoint };
+      state.isDrawing = true;
+
+      // Update preview to show the new starting point
+      if (onPreview && state.startPoint && state.endPoint) {
+        onPreview(createLineEntity(state.startPoint, state.endPoint));
+      }
 
       return result;
     }
@@ -100,6 +112,11 @@ export function createLineTool(options: LineToolOptions = {}) {
     state.startPoint = null;
     state.endPoint = null;
     state.isDrawing = false;
+    state.continuousMode = false; // Exit continuous mode on cancel
+  }
+
+  function setContinuousMode(enabled: boolean) {
+    state.continuousMode = enabled;
   }
 
   function getState(): LineToolState {
@@ -115,6 +132,7 @@ export function createLineTool(options: LineToolOptions = {}) {
     handleClick,
     handleMove,
     cancel,
+    setContinuousMode,
     getState,
     getPreviewEntity
   };

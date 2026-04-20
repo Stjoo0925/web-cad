@@ -5,27 +5,8 @@ import {
   batchChangeEntityColor,
   batchChangeEntityLineWidth,
   getLayerEntityStats,
-  Layer,
-  Entity,
-  LayerFilterCriteria,
 } from "../tools/layer-filter";
-
-export interface Layer {
-  id: string;
-  name: string;
-  visible: boolean;
-  locked: boolean;
-  color: string;
-}
-
-export interface Entity {
-  id: string;
-  type: string;
-  layer: string;
-  color?: string;
-  lineWidth?: number;
-  [key: string]: unknown;
-}
+import type { Layer, Entity, LayerFilterCriteria } from "../tools/layer-filter";
 
 interface LayerPanelProps {
   layers?: Layer[];

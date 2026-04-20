@@ -26,6 +26,8 @@ export interface Entity {
   color?: string;
   lineWidth?: number;
   layer?: string;
+  /** 선 종류: CONTINUOUS, DASHED, DASHDOT, DOT, CENTER, BORDER */
+  linetype?: Linetype;
   /** Block reference */
   blockName?: string;
   blockPosition?: Point;
@@ -34,10 +36,21 @@ export interface Entity {
   [key: string]: unknown;
 }
 
+/**
+ * 지원되는 선 종류
+ */
+export type Linetype =
+  | "CONTINUOUS"
+  | "DASHED"
+  | "DASHDOT"
+  | "DOT"
+  | "CENTER"
+  | "BORDER";
+
 export interface GridOptions {
   width: number;
   height: number;
-  origin: Point;
+  origin?: Point;
   zoom: number;
   gridSize?: number;
 }

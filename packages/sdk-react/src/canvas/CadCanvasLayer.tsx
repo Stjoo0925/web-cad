@@ -21,7 +21,7 @@ export interface CadCanvasLayerProps {
   viewport?: Viewport;
   onViewportChange?: (viewport: Viewport) => void;
   /** 캔버스 ref를 부모에 노출하여 export 등에 활용 */
-  canvasRef?: React.RefObject<HTMLCanvasElement>;
+  canvasRef?: React.RefObject<HTMLCanvasElement | null>;
   /** 스냅 기능 활성화 여부 */
   snapEnabled?: boolean;
   /** Ortho 모드 활성화 여부 */

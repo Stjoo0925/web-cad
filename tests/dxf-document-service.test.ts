@@ -16,16 +16,14 @@ test("replays commit events into a DXF snapshot while keeping collaboration side
 
     await documentService.createDocument({
       documentId: "survey-1",
-      pointCloudReference: {
-        assetId: "pc-asset-1",
-        origin: { x: 357100, y: 4162100, z: 52 }
-      }
+      pointCloudReference: "pc-asset-1"
     });
 
     await documentService.appendEvent({
       documentId: "survey-1",
       event: {
         type: "entity.commit.applied",
+        timestamp: new Date().toISOString(),
         entity: {
           id: "line-1",
           type: "LINE",
@@ -40,6 +38,7 @@ test("replays commit events into a DXF snapshot while keeping collaboration side
       documentId: "survey-1",
       event: {
         type: "entity.commit.applied",
+        timestamp: new Date().toISOString(),
         entity: {
           id: "point-1",
           type: "POINT",
@@ -55,7 +54,7 @@ test("replays commit events into a DXF snapshot while keeping collaboration side
     assert.match(snapshot.dxfContent, /LINE/);
     assert.match(snapshot.dxfContent, /POINT/);
     assert.equal(sidecar.events.length, 2);
-    assert.equal(sidecar.pointCloudReference.assetId, "pc-asset-1");
+    assert.equal(sidecar.pointCloudReference, "pc-asset-1");
   } finally {
     await rm(tempRoot, { recursive: true, force: true });
   }

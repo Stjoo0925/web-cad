@@ -5,7 +5,7 @@ import { CollaborationSessionManager } from "../packages/core/src/collaboration/
 
 test("automatically checks out an entity, broadcasts previews, and releases on commit", () => {
   const manager = new CollaborationSessionManager();
-  const events = [];
+  const events: Array<{ type: string }> = [];
 
   manager.subscribe((event) => {
     events.push(event);
@@ -18,7 +18,9 @@ test("automatically checks out an entity, broadcasts previews, and releases on c
   });
 
   assert.equal(checkout.status, "acquired");
-  assert.equal(manager.getCheckout("doc-1", "line-1").userId, "alice");
+  const currentCheckout = manager.getCheckout("doc-1", "line-1");
+  assert.ok(currentCheckout);
+  assert.equal(currentCheckout.userId, "alice");
 
   manager.publishDraft({
     documentId: "doc-1",

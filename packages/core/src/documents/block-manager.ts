@@ -209,7 +209,15 @@ export class BlockManager {
       const fx = rx + x;
       const fy = ry + y;
 
-      const exploded = { ...entity, x: fx, y: fy, layer: ref.layer } as Record<string, unknown>;
+      const base =
+        typeof entity === "object" && entity !== null
+          ? (entity as Record<string, unknown>)
+          : ({ value: entity } as Record<string, unknown>);
+
+      const exploded = { ...base, x: fx, y: fy, layer: ref.layer } as Record<
+        string,
+        unknown
+      >;
 
       if (entityWithCoords.tag && attrMap[entityWithCoords.tag] !== undefined) {
         exploded.value = attrMap[entityWithCoords.tag];

@@ -34,7 +34,8 @@ test("tsc --noEmit이 실행 가능해야 함", () => {
     execSync("npx tsc --noEmit", { cwd: path.resolve(__dirname, ".."), stdio: "pipe" });
   } catch (e) {
     // TSC가 실행되면 현재 JS파일이 있으므로 오류 발생 예상
-    // 핵심은 tsc 명령 자체가 실행 가능해야 함 (status 2는 TS에러正常的)
-    assert.ok(e.status === 2 || e.message.includes("tsc"), "tsc 실행 가능해야 함");
+    // 핵심은 tsc 명령 자체가 실행 가능해야 함 (status 2는 TS에러정상)
+    const err = e as { status?: number; message?: string };
+    assert.ok(err.status === 2 || Boolean(err.message?.includes("tsc")), "tsc 실행 가능해야 함");
   }
 });

@@ -1,20 +1,5 @@
 import React, { useCallback } from "react";
-
-export interface Entity {
-  id: string;
-  type: string;
-  layer?: string;
-  color?: string;
-  start?: { x: number; y: number };
-  end?: { x: number; y: number };
-  center?: { x: number; y: number };
-  position?: { x: number; y: number };
-  radius?: number;
-  startAngle?: number;
-  endAngle?: number;
-  vertices?: { x: number; y: number }[];
-  closed?: boolean;
-}
+import type { Entity } from "../canvas/cad-canvas-renderer";
 
 const ENTITY_FIELDS: Record<string, Array<{ key: string; label: string; type: string }>> = {
   LINE: [

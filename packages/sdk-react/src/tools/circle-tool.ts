@@ -35,6 +35,8 @@ export interface CircleToolState {
   centerPoint: Point | null;
   radiusPoint: Point | null;
   isDrawing: boolean;
+  /** 연속 실행 모드 */
+  continuousMode: boolean;
 }
 
 export interface CircleToolOptions {
@@ -52,6 +54,7 @@ export function createCircleTool(options: CircleToolOptions = {}) {
     centerPoint: null,
     radiusPoint: null,
     isDrawing: false,
+    continuousMode: true,
   };
 
   function handleClick(screenPoint: Point): CircleEntity | null {
@@ -81,8 +84,14 @@ export function createCircleTool(options: CircleToolOptions = {}) {
       }
 
       const result = entity;
-      state.centerPoint = null;
-      state.radiusPoint = null;
+
+      // Continuous mode: stay in drawing mode with same center for next circle
+      state.radiusPoint = { ...screenPoint };
+      state.isDrawing = true;
+
+      if (onPreview && state.centerPoint) {
+        onPreview(createCircleEntity(state.centerPoint, calculateRadius()));
+      }
 
       return result;
     }
@@ -110,6 +119,11 @@ export function createCircleTool(options: CircleToolOptions = {}) {
     state.centerPoint = null;
     state.radiusPoint = null;
     state.isDrawing = false;
+    state.continuousMode = false;
+  }
+
+  function setContinuousMode(enabled: boolean) {
+    state.continuousMode = enabled;
   }
 
   function getState(): CircleToolState {
@@ -125,6 +139,7 @@ export function createCircleTool(options: CircleToolOptions = {}) {
     handleClick,
     handleMove,
     cancel,
+    setContinuousMode,
     getState,
     getPreviewEntity,
   };

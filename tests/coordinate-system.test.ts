@@ -6,8 +6,6 @@ import { CoordinateSystem } from "../packages/core/src/geometry/coordinate-syste
 test("converts large world coordinates into stable local coordinates", () => {
   const coordinateSystem = new CoordinateSystem();
   coordinateSystem.setOriginFromBoundingBox({
-    min: { x: 357000, y: 4162000, z: 42 },
-    max: { x: 357200, y: 4162200, z: 62 },
     center: { x: 357100, y: 4162100, z: 52 }
   });
 

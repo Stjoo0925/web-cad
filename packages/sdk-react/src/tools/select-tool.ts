@@ -6,34 +6,16 @@
  * 단일/다중 선택, 선택 해제, 히트 테스트 기능을 제공합니다.
  */
 
+import type {
+  Entity,
+  Point,
+  Viewport,
+} from "../canvas/cad-canvas-renderer";
+
 /**
  * 히트 허용 오차 (픽셀)
  */
 const HIT_TOLERANCE = 8;
-
-export interface Point {
-  x: number;
-  y: number;
-}
-
-export interface Entity {
-  id: string;
-  type: string;
-  position?: Point;
-  start?: Point;
-  end?: Point;
-  vertices?: Point[];
-  center?: Point;
-  radius?: number;
-  closed?: boolean;
-  [key: string]: unknown;
-}
-
-export interface Viewport {
-  zoom?: number;
-  pan?: Point;
-  [key: string]: unknown;
-}
 
 /**
  * 포인트와 세그먼트(선분) 사이의 최소 거리를 계산합니다.
@@ -256,9 +238,9 @@ export function hitTestRect(
           // Check if any point of the line is inside the rect
           return (
             (entity.start.x >= rect.minX && entity.start.x <= rect.maxX &&
-             entity.start.y >= rect.minY && entity.start.y <= rect.maxY) ||
+              entity.start.y >= rect.minY && entity.start.y <= rect.maxY) ||
             (entity.end.x >= rect.minX && entity.end.x <= rect.maxX &&
-             entity.end.y >= rect.minY && entity.end.y <= rect.maxY)
+              entity.end.y >= rect.minY && entity.end.y <= rect.maxY)
           );
         }
         return false;

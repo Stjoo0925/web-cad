@@ -33,6 +33,24 @@ export interface Entity {
   blockPosition?: Point;
   blockRotation?: number;
   blockScale?: { x: number; y: number };
+  /** ELLIPSE: 장반축 끝점 */
+  majorAxisEndpoint?: Point;
+  /** ELLIPSE: 단반축 비율 */
+  minorAxisRatio?: number;
+  /** ELLIPSE: 회전각 (도) */
+  rotation?: number;
+  /** TEXT/MTEXT: 텍스트 내용 */
+  text?: string;
+  /** TEXT/MTEXT: 높이 */
+  height?: number;
+  /** TEXT/MTEXT: 폭 */
+  width?: number;
+  /** TEXT/MTEXT: 줄 간격 */
+  lineSpacing?: number;
+  /** MTEXT: 정렬 */
+  alignment?: string;
+  /** MTEXT: 회전각 */
+  rotationAngle?: number;
   [key: string]: unknown;
 }
 
@@ -159,6 +177,13 @@ export function renderEntity(
       return renderArc(ctx, entity, viewport);
     case "BLOCK":
       return renderBlock(ctx, entity, viewport);
+    case "TEXT":
+    case "MTEXT":
+      return renderText(ctx, entity, viewport);
+    case "ELLIPSE":
+      return renderEllipse(ctx, entity, viewport);
+    case "SPLINE":
+      return renderSpline(ctx, entity, viewport);
     default:
       return;
   }
@@ -177,6 +202,39 @@ function renderPoint(
   ctx.beginPath();
   ctx.arc(p.x, p.y, 3 * Math.max(viewport.zoom, 0.5), 0, Math.PI * 2);
   ctx.fill();
+}
+
+/**
+ * TEXT/MTEXT 엔티티 렌더링
+ */
+function renderText(
+  ctx: CanvasRenderingContext2D,
+  entity: Entity,
+  viewport: Viewport,
+) {
+  if (!entity.position) return;
+
+  const screenX = (entity.position.x - viewport.pan.x) * viewport.zoom + viewport.width / 2;
+  const screenY = (entity.position.y - viewport.pan.y) * viewport.zoom + viewport.height / 2;
+
+  const height = (entity.height ?? 1) * viewport.zoom;
+  const text = entity.text as string || entity.value as string || "";
+
+  ctx.font = `${height}px Arial`;
+  ctx.fillStyle = entity.color ?? "#333333";
+  ctx.textBaseline = "top";
+
+  // Handle MTEXT (multiline)
+  if (entity.type === "MTEXT" && text.includes("\n")) {
+    const lines = text.split("\n");
+    const lineHeight = height * (entity.lineSpacing ?? 1.2);
+
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i], screenX, screenY + i * lineHeight);
+    }
+  } else {
+    ctx.fillText(text, screenX, screenY);
+  }
 }
 
 function renderLine(
@@ -251,6 +309,89 @@ function renderArc(
   setLinetypeRender(ctx, entity.linetype, ctx.lineWidth);
   ctx.beginPath();
   ctx.arc(center.x, center.y, radius, startAngle, endAngle);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+/**
+ * ELLIPSE 엔티티 렌더링
+ */
+function renderEllipse(
+  ctx: CanvasRenderingContext2D,
+  entity: Entity,
+  viewport: Viewport,
+) {
+  if (!entity.center || !entity.majorAxisEndpoint) return;
+
+  const centerScreen = worldToScreen(entity.center, viewport);
+
+  // Calculate radii in screen coordinates
+  const majorDx = entity.majorAxisEndpoint.x - entity.center.x;
+  const majorDy = entity.majorAxisEndpoint.y - entity.center.y;
+  const majorRadiusScreen = Math.hypot(majorDx, majorDy) * viewport.zoom;
+  const minorRadiusScreen = majorRadiusScreen * (entity.minorAxisRatio ?? 0.5);
+
+  // Rotation angle
+  const rotationRad = ((entity.rotation ?? 0) * Math.PI) / 180;
+
+  ctx.save();
+  ctx.translate(centerScreen.x, centerScreen.y);
+  ctx.rotate(rotationRad);
+
+  ctx.strokeStyle = entity.color ?? "#333333";
+  ctx.lineWidth = (entity.lineWidth ?? 1) * viewport.zoom;
+  setLinetypeRender(ctx, entity.linetype, ctx.lineWidth);
+  ctx.beginPath();
+  ctx.ellipse(0, 0, majorRadiusScreen, minorRadiusScreen, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.restore();
+  ctx.setLineDash([]);
+}
+
+/**
+ * SPLINE 엔티티 렌더링 (베지어 곡선)
+ */
+function renderSpline(
+  ctx: CanvasRenderingContext2D,
+  entity: Entity,
+  viewport: Viewport,
+) {
+  if (!entity.vertices || entity.vertices.length < 2) return;
+
+  ctx.strokeStyle = entity.color ?? "#333333";
+  ctx.lineWidth = (entity.lineWidth ?? 1) * viewport.zoom;
+  setLinetypeRender(ctx, entity.linetype, ctx.lineWidth);
+  ctx.beginPath();
+
+  const points = entity.vertices.map((v) => worldToScreen(v, viewport));
+
+  if (points.length < 3) {
+    // Not enough points for a curve, draw as polyline
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i].x, points[i].y);
+    }
+  } else {
+    // Draw as smooth curve through points using quadratic bezier
+    ctx.moveTo(points[0].x, points[0].y);
+
+    for (let i = 1; i < points.length - 1; i++) {
+      const xc = (points[i].x + points[i + 1].x) / 2;
+      const yc = (points[i].y + points[i + 1].y) / 2;
+      ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+    }
+
+    // Curve to the last point
+    const last = points[points.length - 1];
+    ctx.quadraticCurveTo(
+      points[points.length - 2].x,
+      points[points.length - 2].y,
+      last.x,
+      last.y,
+    );
+  }
+
   ctx.stroke();
   ctx.setLineDash([]);
 }

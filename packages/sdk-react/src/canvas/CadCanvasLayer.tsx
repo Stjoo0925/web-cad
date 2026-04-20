@@ -48,6 +48,27 @@ export interface CadCanvasLayerProps {
     worldEnd: Point,
     modifiers?: { shift?: boolean },
   ) => void;
+  /**
+   * 드래그 모드 결정.
+   * - "selectionBox": 기본 드래그 선택 박스 표시/완료 콜백 호출
+   * - "none": 선택 박스는 띄우지 않지만 onDragMove/onDragEnd는 호출됨
+   */
+  getDragMode?: (
+    startWorld: Point,
+    modifiers?: { shift?: boolean; ctrl?: boolean },
+  ) => "selectionBox" | "none";
+  /** 드래그 중(포인터 이동) 콜백 */
+  onDragMove?: (
+    worldStart: Point,
+    worldCurrent: Point,
+    modifiers?: { shift?: boolean; ctrl?: boolean },
+  ) => void;
+  /** 드래그 종료(포인터 업) 콜백 */
+  onDragEnd?: (
+    worldStart: Point,
+    worldEnd: Point,
+    modifiers?: { shift?: boolean; ctrl?: boolean },
+  ) => void;
   /** 선택된 엔티티 ID 배열 */
   selectedIds?: string[];
   /** 선택된 엔티티 렌더링 스타일 */
@@ -67,6 +88,9 @@ export function CadCanvasLayer({
   onDoubleClick,
   onSelectionBoxStart,
   onSelectionBoxEnd,
+  getDragMode,
+  onDragMove,
+  onDragEnd,
   selectedIds = [],
   selectedColor = "#0078d4",
 }: CadCanvasLayerProps) {
@@ -273,33 +297,52 @@ export function CadCanvasLayer({
       // Capture pointer so we receive move/up events even if cursor leaves the element
       wrapper.setPointerCapture(e.pointerId);
 
-      const rect = wrapper.getBoundingClientRect();
-      const startX = e.clientX - rect.left;
-      const startY = e.clientY - rect.top;
+      const rect0 = wrapper.getBoundingClientRect();
+      const startX = e.clientX - rect0.left;
+      const startY = e.clientY - rect0.top;
       const startWorld = screenToWorld({ x: startX, y: startY });
       let dragStarted = false;
       let pendingSelectionBox: { start: Point; end: Point; shift: boolean } | null = null;
+      const dragMode = getDragMode?.(startWorld, {
+        shift: e.shiftKey,
+        ctrl: e.ctrlKey,
+      }) ?? "selectionBox";
 
       const onMove = (moveEvent: PointerEvent) => {
+        const rect = wrapper.getBoundingClientRect();
         const dx = moveEvent.clientX - rect.left - startX;
         const dy = moveEvent.clientY - rect.top - startY;
 
         if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
           if (!dragStarted) {
             dragStarted = true;
-            // Start selection box
-            pendingSelectionBox = {
-              start: startWorld,
-              end: startWorld,
-              shift: moveEvent.shiftKey,
-            };
+            // Start selection box (optional)
+            if (dragMode === "selectionBox") {
+              pendingSelectionBox = {
+                start: startWorld,
+                end: startWorld,
+                shift: moveEvent.shiftKey,
+              };
+            }
           }
 
-          // Update selection box
-          const currentScreen = { x: moveEvent.clientX - rect.left, y: moveEvent.clientY - rect.top };
+          const currentScreen = {
+            x: moveEvent.clientX - rect.left,
+            y: moveEvent.clientY - rect.top,
+          };
           const currentWorld = screenToWorld(currentScreen);
-          pendingSelectionBox = pendingSelectionBox ? { ...pendingSelectionBox, end: currentWorld } : null;
-          setSelectionBox(pendingSelectionBox);
+
+          if (dragMode === "selectionBox") {
+            pendingSelectionBox = pendingSelectionBox
+              ? { ...pendingSelectionBox, end: currentWorld }
+              : null;
+            setSelectionBox(pendingSelectionBox);
+          }
+
+          onDragMove?.(startWorld, currentWorld, {
+            shift: moveEvent.shiftKey,
+            ctrl: moveEvent.ctrlKey,
+          });
         }
       };
 
@@ -312,25 +355,48 @@ export function CadCanvasLayer({
           // ignore if already released
         }
 
+        const rect = wrapper.getBoundingClientRect();
+        const endScreen = {
+          x: upEvent.clientX - rect.left,
+          y: upEvent.clientY - rect.top,
+        };
+        const endWorld = screenToWorld(endScreen);
+
+        if (dragStarted) {
+          onDragEnd?.(startWorld, endWorld, {
+            shift: upEvent.shiftKey,
+            ctrl: upEvent.ctrlKey,
+          });
+        }
+
         // Complete selection box if exists
         if (pendingSelectionBox) {
-          const endScreen = { x: upEvent.clientX - rect.left, y: upEvent.clientY - rect.top };
-          const endWorld = screenToWorld(endScreen);
-          onSelectionBoxEnd?.(pendingSelectionBox.start, endWorld, { shift: pendingSelectionBox.shift });
+          onSelectionBoxEnd?.(pendingSelectionBox.start, endWorld, {
+            shift: pendingSelectionBox.shift,
+          });
         }
         pendingSelectionBox = null;
         setSelectionBox(null);
       };
 
       // Emit selection box start if handler exists
-      if (onSelectionBoxStart) {
+      if (dragMode === "selectionBox" && onSelectionBoxStart) {
         onSelectionBoxStart(startWorld, { shift: e.shiftKey });
       }
 
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
     },
-    [viewport, onViewportChange, screenToWorld, onSelectionBoxStart, onSelectionBoxEnd],
+    [
+      viewport,
+      onViewportChange,
+      screenToWorld,
+      onSelectionBoxStart,
+      onSelectionBoxEnd,
+      getDragMode,
+      onDragMove,
+      onDragEnd,
+    ],
   );
 
   return (

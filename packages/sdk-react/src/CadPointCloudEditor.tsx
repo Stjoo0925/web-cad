@@ -20,7 +20,7 @@ import { createOffsetTool } from "./tools/offset-tool.js";
 import { createTrimTool } from "./tools/trim-tool.js";
 import { createExtendTool } from "./tools/extend-tool.js";
 import { createScaleTool } from "./tools/scale-tool.js";
-import { hitTestEntities } from "./tools/select-tool.js";
+import { hitTestEntities, hitTestRect } from "./tools/select-tool.js";
 import { LayersPanel } from "./panels/LayersPanel.js";
 import { PropertiesPanel } from "./panels/PropertiesPanel.js";
 
@@ -616,6 +616,33 @@ export function CadPointCloudEditor({
   const [activeLayer, setActiveLayer] = useState<string | null>("0");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  const dragMoveRef = useRef<{
+    mode: "none" | "moveEntities";
+    startWorld: Point | null;
+    entityIds: string[];
+    originals: Map<string, Entity>;
+  }>({
+    mode: "none",
+    startWorld: null,
+    entityIds: [],
+    originals: new Map(),
+  });
+
+  const translateEntity = useCallback((entity: Entity, delta: Point): Entity => {
+    const dx = delta.x;
+    const dy = delta.y;
+    const movePoint = (p: Point): Point => ({ x: p.x + dx, y: p.y + dy });
+
+    const next: Entity = { ...entity };
+    if (next.position) next.position = movePoint(next.position);
+    if (next.start) next.start = movePoint(next.start);
+    if (next.end) next.end = movePoint(next.end);
+    if (next.center) next.center = movePoint(next.center);
+    if (next.vertices) next.vertices = next.vertices.map(movePoint);
+    if (next.blockPosition) next.blockPosition = movePoint(next.blockPosition);
+    return next;
+  }, []);
+
   // Entity history for undo/redo
   const historyRef = useRef(createEntityHistory());
 
@@ -1048,6 +1075,79 @@ export function CadPointCloudEditor({
     ],
   );
 
+  const getCanvasDragMode = useCallback(
+    (startWorld: Point, modifiers?: { shift?: boolean; ctrl?: boolean }) => {
+      // Only in select tool: allow click-drag to move entities (AutoCAD-like).
+      if (currentTool !== "select") return "selectionBox" as const;
+      if (modifiers?.shift || modifiers?.ctrl) return "selectionBox" as const;
+
+      const hit = hitTestEntities(visibleEntities, startWorld, viewport);
+      if (!hit || !selectableEntityIds.has(hit.id)) return "selectionBox" as const;
+
+      const idsToMove =
+        selectedIds.length > 0 && selectedIds.includes(hit.id)
+          ? selectedIds.filter((id) => selectableEntityIds.has(id))
+          : [hit.id];
+
+      const originals = new Map<string, Entity>();
+      for (const id of idsToMove) {
+        const found = entities.find((e) => e.id === id);
+        if (found) originals.set(id, found);
+      }
+
+      dragMoveRef.current = {
+        mode: "moveEntities",
+        startWorld,
+        entityIds: idsToMove,
+        originals,
+      };
+
+      // Save a snapshot for undo before applying drag transforms
+      historyRef.current.saveToHistory(entities);
+
+      // Ensure dragged entity/entities are selected
+      setSelectedIds(idsToMove);
+      return "none" as const;
+    },
+    [
+      currentTool,
+      visibleEntities,
+      viewport,
+      selectableEntityIds,
+      selectedIds,
+      entities,
+    ],
+  );
+
+  const handleCanvasDragMove = useCallback(
+    (worldStart: Point, worldCurrent: Point) => {
+      const state = dragMoveRef.current;
+      if (state.mode !== "moveEntities" || !state.startWorld) return;
+      const delta = {
+        x: worldCurrent.x - state.startWorld.x,
+        y: worldCurrent.y - state.startWorld.y,
+      };
+
+      setEntities((prev) =>
+        prev.map((e) => {
+          const original = state.originals.get(e.id);
+          if (!original) return e;
+          return translateEntity(original, delta);
+        }),
+      );
+    },
+    [translateEntity],
+  );
+
+  const handleCanvasDragEnd = useCallback(() => {
+    dragMoveRef.current = {
+      mode: "none",
+      startWorld: null,
+      entityIds: [],
+      originals: new Map(),
+    };
+  }, []);
+
   // Handle canvas double-click for polyline close
   const handleCanvasDoubleClick = useCallback(
     (worldPos: Point) => {
@@ -1070,7 +1170,6 @@ export function CadPointCloudEditor({
       };
 
       // Find all entities within the rect
-      const { hitTestRect } = require("./tools/select-tool.js");
       const hitEntities = hitTestRect(visibleEntities, rect);
 
       if (hitEntities.length > 0) {
@@ -1482,6 +1581,9 @@ export function CadPointCloudEditor({
               onClick={handleCanvasClick}
               onDoubleClick={handleCanvasDoubleClick}
               onSelectionBoxEnd={handleSelectionBoxEnd}
+              getDragMode={getCanvasDragMode}
+              onDragMove={handleCanvasDragMove}
+              onDragEnd={handleCanvasDragEnd}
               selectedIds={selectedIds}
               canvasRef={canvasRef}
               snapEnabled={snapEnabled}

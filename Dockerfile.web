@@ -1,0 +1,16 @@
+FROM node:24-alpine
+
+WORKDIR /app
+
+# curl for healthcheck
+RUN apk add --no-cache curl
+
+COPY . .
+
+# Install web app dependencies
+WORKDIR /app/apps/web
+RUN npm install
+
+EXPOSE 3000
+
+CMD ["npx", "vite", "--host", "0.0.0.0", "--port", "3000"]

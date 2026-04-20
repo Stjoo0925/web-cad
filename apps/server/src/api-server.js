@@ -70,6 +70,13 @@ const server = http.createServer(async (request, response) => {
     const url = parseUrl(request);
     const pathname = url.pathname;
 
+    // 헬스체크 엔드포인트
+    if (pathname === "/health/live" || pathname === "/health") {
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ status: "ok", service: "api" }));
+      return;
+    }
+
     if (request.method === "POST" && pathname === "/api/tokens/issue") {
       const body = await readJson(request);
       const token = runtime.tokenService.issueToken(body);

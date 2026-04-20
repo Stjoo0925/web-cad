@@ -402,14 +402,22 @@ export function DemoApp({ baseUrl }) {
     setIsDragging(false);
   }, []);
 
-  // 휠 줌
-  const handleWheel = useCallback((e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setViewport((v) => ({
-      ...v,
-      zoom: Math.max(0.1, Math.min(50, v.zoom * delta))
-    }));
+  // 휠 줌 (passive: false로 등록하여 preventDefault 가능)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      setViewport((v) => ({
+        ...v,
+        zoom: Math.max(0.1, Math.min(50, v.zoom * delta))
+      }));
+    };
+
+    canvas.addEventListener("wheel", handleWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", handleWheel);
   }, []);
 
   // Canvas 클릭 (엔티티 선택)
@@ -483,7 +491,6 @@ export function DemoApp({ baseUrl }) {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
-            onWheel={handleWheel}
             onClick={handleCanvasClick}
             style={{ cursor: currentTool === "select" ? "default" : "crosshair" }}
           />

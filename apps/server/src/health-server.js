@@ -6,7 +6,7 @@
  * Docker Compose의 healthcheck와 연동됩니다.
  */
 
-const http = require("http");
+import http from "node:http";
 
 /**
  * 서비스 상태
@@ -266,12 +266,12 @@ async function main() {
   });
 }
 
-module.exports = {
+export {
   HealthServer,
   ServiceStatus,
   createDockerHealthCheck
 };
 
-if (require.main === module) {
+if (import.meta.main) {
   main();
 }

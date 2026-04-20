@@ -39,6 +39,16 @@ const port = Number(process.env.FILE_SERVER_PORT ?? 4011);
 
 const server = http.createServer(async (request, response) => {
   try {
+    const url = new URL(request.url ?? "", `http://localhost:${port}`);
+    const pathname = url.pathname;
+
+    // 헬스체크 엔드포인트
+    if (pathname === "/health/live" || pathname === "/health") {
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ status: "ok", service: "files" }));
+      return;
+    }
+
     if (request.method !== "GET") {
       response.writeHead(405, { "content-type": "application/json" });
       response.end(JSON.stringify({ error: "Method not allowed" }));

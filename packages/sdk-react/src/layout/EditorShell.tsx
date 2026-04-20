@@ -1,4 +1,14 @@
-import React from "react";
+import React, { ReactNode } from "react";
+
+export interface EditorShellProps {
+  viewport?: ReactNode;
+  leftPanel?: ReactNode;
+  rightPanel?: ReactNode;
+  statusBar?: ReactNode;
+  viewMode?: string;
+  className?: string;
+  style?: React.CSSProperties;
+}
 
 export function EditorShell({
   viewport = null,
@@ -8,10 +18,10 @@ export function EditorShell({
   viewMode = "2d-cad",
   className = "",
   style,
-} = {}) {
-  const hasLeft  = (leftPanel  === null || leftPanel  === undefined) ? false : true;
-  const hasRight = (rightPanel === null || rightPanel === undefined) ? false : true;
-  const hasStatus = (statusBar === null || statusBar === undefined) ? false : true;
+}: EditorShellProps = {}) {
+  const hasLeft  = leftPanel  !== null && leftPanel  !== undefined;
+  const hasRight = rightPanel !== null && rightPanel !== undefined;
+  const hasStatus = statusBar !== null && statusBar !== undefined;
 
   const defaultBar = React.createElement(
     React.Fragment, null,

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { EditorSdkClient } from "../packages/sdk-core/src/editor-sdk-client.js";
+import { EditorSdkClient } from "../packages/sdk-core/src/editor-sdk-client.ts";
 
 test("opens documents, uploads assets directly, and emits host facing events", async () => {
   const requests = [];

@@ -4,7 +4,7 @@ import { CadPointCloudEditor } from "../../../packages/sdk-react/src/index.js";
 const DEFAULT_BASE_URL = "http://localhost:4010";
 const DEFAULT_DOC_ID = "survey-demo";
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   root: {
     fontFamily: "system-ui, sans-serif",
     minHeight: "100vh",
@@ -36,7 +36,7 @@ const styles = {
     gap: "0.4rem",
     fontSize: "0.8rem"
   },
-  label: { color: "#94a3b8", whiteSpace: "nowrap" },
+  label: { color: "#94a3b8", whiteSpace: "nowrap" as const },
   input: {
     background: "rgba(30, 41, 59, 0.8)",
     border: "1px solid rgba(148, 163, 184, 0.25)",
@@ -48,7 +48,7 @@ const styles = {
     width: "16rem"
   },
   inputSmall: { width: "8rem" },
-  editorWrap: { flex: 1, display: "flex", flexDirection: "column" }
+  editorWrap: { flex: 1, display: "flex", flexDirection: "column" as const }
 };
 
 export function App() {
@@ -56,10 +56,10 @@ export function App() {
   const [documentId, setDocumentId] = useState(DEFAULT_DOC_ID);
   const [token, setToken] = useState("");
   const [mapMode, setMapMode] = useState(false);
-  const [status, setStatus] = useState(null);
-  const [log, setLog] = useState([]);
+  const [status, setStatus] = useState<string | null>(null);
+  const [log, setLog] = useState<string[]>([]);
 
-  function addLog(msg) {
+  function addLog(msg: string) {
     setLog((prev) => [...prev.slice(-4), msg]);
   }
 
@@ -67,7 +67,6 @@ export function App() {
     "div",
     { style: styles.root },
 
-    // ── 설정 헤더 ──────────────────────────────────────
     React.createElement(
       "header",
       { style: styles.header },
@@ -123,7 +122,7 @@ export function App() {
         )
       ),
 
-      status \!== null &&
+      status !== null &&
         React.createElement(
           "span",
           {
@@ -140,7 +139,6 @@ export function App() {
         )
     ),
 
-    // ── 이벤트 로그 ────────────────────────────────────
     log.length > 0 &&
       React.createElement(
         "div",
@@ -153,7 +151,7 @@ export function App() {
             color: "#64748b",
             display: "flex",
             gap: "1rem",
-            flexWrap: "wrap"
+            flexWrap: "wrap" as const
           }
         },
         ...log.map((msg, i) =>
@@ -161,7 +159,6 @@ export function App() {
         )
       ),
 
-    // ── 편집기 ────────────────────────────────────────
     React.createElement(
       "div",
       { style: styles.editorWrap },
@@ -171,7 +168,7 @@ export function App() {
         documentId,
         viewMode: "2d-cad",
         mapProvider: mapMode ? "naver" : null,
-        naverMapClientId: mapMode ? (import.meta?.env?.VITE_NAVER_MAP_CLIENT_ID ?? "") : null,
+        naverMapClientId: mapMode ? ((import.meta as unknown as { env?: { VITE_NAVER_MAP_CLIENT_ID?: string } }).env?.VITE_NAVER_MAP_CLIENT_ID ?? "") : null,
         onDocumentOpened: (doc) => {
           setStatus("ready");
           addLog(`문서 열림: ${doc?.id ?? documentId}`);

@@ -204,47 +204,52 @@ interface ToolbarProps {
 
 function Toolbar({ currentTool, onToolChange, viewMode, onViewModeChange, onLoadSample }: ToolbarProps) {
   return (
-    <header className="demo-toolbar">
-      <span className="demo-toolbar__title">Web CAD Demo</span>
-      <div className="demo-toolbar__tools">
+    <header className="flex items-center gap-3 px-3 h-11 bg-[#1e1e1e] text-[#ccc] flex-shrink-0" style={{ fontFamily: "system-ui, sans-serif", fontSize: "13px" }}>
+      <span className="font-semibold text-sm text-white mr-2">Web CAD Demo</span>
+      <div className="flex gap-1">
         <button
-          className={currentTool === "select" ? "active" : ""}
+          className={`px-3 py-1 border border-[#444] rounded text-xs transition-colors ${currentTool === "select" ? "bg-[#0d7dd4] border-[#0d7dd4] text-white" : "bg-[#2d2d2d] text-[#ccc] hover:bg-[#3d3d3d]"}`}
           onClick={() => onToolChange("select")}
           title="Select (S)"
         >
           [S] Select
         </button>
         <button
-          className={currentTool === "line" ? "active" : ""}
+          className={`px-3 py-1 border border-[#444] rounded text-xs transition-colors ${currentTool === "line" ? "bg-[#0d7dd4] border-[#0d7dd4] text-white" : "bg-[#2d2d2d] text-[#ccc] hover:bg-[#3d3d3d]"}`}
           onClick={() => onToolChange("line")}
           title="Line (L)"
         >
           [L] Line
         </button>
         <button
-          className={currentTool === "polyline" ? "active" : ""}
+          className={`px-3 py-1 border border-[#444] rounded text-xs transition-colors ${currentTool === "polyline" ? "bg-[#0d7dd4] border-[#0d7dd4] text-white" : "bg-[#2d2d2d] text-[#ccc] hover:bg-[#3d3d3d]"}`}
           onClick={() => onToolChange("polyline")}
           title="Polyline (P)"
         >
           [P] Polyline
         </button>
       </div>
-      <div className="demo-toolbar__views">
+      <div className="flex gap-1">
         <button
-          className={viewMode === "2d-cad" ? "active" : ""}
+          className={`px-3 py-1 border rounded text-xs transition-colors ${viewMode === "2d-cad" ? "bg-[#0d7dd4] border-[#0d7dd4] text-white" : "bg-[#2d2d2d] border-[#444] text-[#ccc] hover:bg-[#3d3d3d]"}`}
           onClick={() => onViewModeChange("2d-cad")}
         >
           2D CAD
         </button>
         <button
-          className={viewMode === "point-cloud" ? "active" : ""}
+          className={`px-3 py-1 border rounded text-xs transition-colors ${viewMode === "point-cloud" ? "bg-[#0d7dd4] border-[#0d7dd4] text-white" : "bg-[#2d2d2d] border-[#444] text-[#ccc] hover:bg-[#3d3d3d]"}`}
           onClick={() => onViewModeChange("point-cloud")}
         >
           Point Cloud
         </button>
       </div>
-      <div className="demo-toolbar__actions">
-        <button onClick={onLoadSample}>Sample Drawing</button>
+      <div className="flex gap-1">
+        <button
+          className="px-3 py-1 border border-[#0d6cb4] rounded text-xs bg-[#0d6cb4] text-white hover:bg-[#0a5a9e] transition-colors"
+          onClick={onLoadSample}
+        >
+          Sample Drawing
+        </button>
       </div>
     </header>
   );
@@ -264,34 +269,34 @@ interface LayerPanelProps {
 
 function LayerPanel({ layers, activeLayer, onLayerSelect, onToggleVisibility, onToggleLock }: LayerPanelProps) {
   return (
-    <div className="demo-layer-panel">
-      <div className="demo-layer-panel__header">Layers</div>
-      <div className="demo-layer-panel__list">
+    <div className="w-[180px] bg-[#1e1e1e] border-r border-[#333] flex flex-col flex-shrink-0">
+      <div className="px-3 py-2 font-semibold text-xs text-white border-b border-[#333] bg-[#252526]">Layers</div>
+      <div className="flex-1 overflow-y-auto py-1">
         {layers.map((layer) => (
           <div
             key={layer.name}
-            className={`demo-layer-item ${layer.name === activeLayer ? "active" : ""}`}
+            className={`flex items-center gap-1 px-2 py-[5px] cursor-pointer transition-colors ${layer.name === activeLayer ? "bg-[#094771]" : "hover:bg-[#2a2a2a]"}`}
             onClick={() => onLayerSelect(layer.name)}
           >
             <button
-              className="demo-layer-item__visibility"
+              className="w-[22px] h-[22px] p-0 border-none rounded bg-transparent text-[#888] text-xs flex items-center justify-center flex-shrink-0 hover:bg-[#3d3d3d] transition-colors"
               onClick={(e) => { e.stopPropagation(); onToggleVisibility(layer.name, !layer.visible); }}
               title={layer.visible ? "Hide" : "Show"}
             >
               {layer.visible ? "👁" : "○"}
             </button>
             <button
-              className="demo-layer-item__lock"
+              className="w-[22px] h-[22px] p-0 border-none rounded bg-transparent text-[#888] text-xs flex items-center justify-center flex-shrink-0 hover:bg-[#3d3d3d] transition-colors"
               onClick={(e) => { e.stopPropagation(); onToggleLock(layer.name, !layer.locked); }}
               title={layer.locked ? "Unlock" : "Lock"}
             >
               {layer.locked ? "🔒" : "🔓"}
             </button>
             <span
-              className="demo-layer-item__color"
+              className="w-[14px] h-[14px] rounded-sm border border-[#555] flex-shrink-0"
               style={{ backgroundColor: getColorHex(layer.color) }}
             />
-            <span className="demo-layer-item__name">{layer.name}</span>
+            <span className="flex-1 text-xs text-[#ccc] overflow-hidden text-ellipsis whitespace-nowrap">{layer.name}</span>
           </div>
         ))}
       </div>
@@ -310,26 +315,26 @@ interface PropertiesPanelProps {
 function PropertiesPanel({ entity }: PropertiesPanelProps) {
   if (!entity) {
     return (
-      <div className="demo-properties-panel">
-        <div className="demo-properties-panel__header">Properties</div>
-        <div className="demo-properties-panel__empty">No entity selected</div>
+      <div className="w-[200px] bg-[#1e1e1e] border-l border-[#333] flex flex-col flex-shrink-0">
+        <div className="px-3 py-2 font-semibold text-xs text-white border-b border-[#333] bg-[#252526]">Properties</div>
+        <div className="px-3 py-4 text-[#666] italic text-xs">No entity selected</div>
       </div>
     );
   }
 
   return (
-    <div className="demo-properties-panel">
-      <div className="demo-properties-panel__header">Properties</div>
-      <table className="demo-properties-panel__table">
+    <div className="w-[200px] bg-[#1e1e1e] border-l border-[#333] flex flex-col flex-shrink-0">
+      <div className="px-3 py-2 font-semibold text-xs text-white border-b border-[#333] bg-[#252526]">Properties</div>
+      <table className="w-full text-xs border-collapse">
         <tbody>
-          <tr><td>ID</td><td>{entity.id}</td></tr>
-          <tr><td>Type</td><td>{entity.type}</td></tr>
-          <tr><td>Layer</td><td>{entity.layer}</td></tr>
+          <tr><td className="px-2 py-1 border-b border-[#2a2a2a] text-[#888] w-[70px]">ID</td><td className="px-2 py-1 border-b border-[#2a2a2a] text-[#ccc]">{entity.id}</td></tr>
+          <tr><td className="px-2 py-1 border-b border-[#2a2a2a] text-[#888]">Type</td><td className="px-2 py-1 border-b border-[#2a2a2a] text-[#ccc]">{entity.type}</td></tr>
+          <tr><td className="px-2 py-1 border-b border-[#2a2a2a] text-[#888]">Layer</td><td className="px-2 py-1 border-b border-[#2a2a2a] text-[#ccc]">{entity.layer}</td></tr>
           {entity.points && entity.points.length > 0 && (
-            <tr><td>Start</td><td>X: {entity.points[0].x}, Y: {entity.points[0].y}</td></tr>
+            <tr><td className="px-2 py-1 border-b border-[#2a2a2a] text-[#888]">Start</td><td className="px-2 py-1 border-b border-[#2a2a2a] text-[#ccc]">X: {entity.points[0].x}, Y: {entity.points[0].y}</td></tr>
           )}
           {entity.radius && (
-            <tr><td>Radius</td><td>{entity.radius}</td></tr>
+            <tr><td className="px-2 py-1 border-b border-[#2a2a2a] text-[#888]">Radius</td><td className="px-2 py-1 border-b border-[#2a2a2a] text-[#ccc]">{entity.radius}</td></tr>
           )}
         </tbody>
       </table>
@@ -503,7 +508,7 @@ export function DemoApp({ baseUrl }: DemoAppProps) {
   }, []);
 
   return (
-    <div className="demo-app">
+    <div className="flex flex-col w-screen h-screen overflow-hidden" style={{ fontFamily: "system-ui, sans-serif", fontSize: "13px" }}>
       <Toolbar
         currentTool={currentTool}
         onToolChange={setCurrentTool}
@@ -511,7 +516,7 @@ export function DemoApp({ baseUrl }: DemoAppProps) {
         onViewModeChange={setViewMode}
         onLoadSample={handleLoadSample}
       />
-      <div className="demo-app__body">
+      <div className="flex flex-1 overflow-hidden">
         <LayerPanel
           layers={layers}
           activeLayer={activeLayer}
@@ -527,10 +532,10 @@ export function DemoApp({ baseUrl }: DemoAppProps) {
             );
           }}
         />
-        <div className="demo-app__viewport">
+        <div className="flex-1 overflow-hidden bg-[#333] relative">
           <canvas
             ref={canvasRef}
-            className="demo-canvas"
+            className="block w-full h-full"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -541,7 +546,7 @@ export function DemoApp({ baseUrl }: DemoAppProps) {
         </div>
         <PropertiesPanel entity={selectedEntity} />
       </div>
-      <footer className="demo-statusbar">
+      <footer className="flex items-center gap-4 px-3 h-6 bg-[#007acc] text-white text-xs flex-shrink-0">
         <span>Mode: {viewMode === "2d-cad" ? "2D CAD" : "Point Cloud"}</span>
         <span>Tool: {currentTool}</span>
         <span>Zoom: {viewport.zoom.toFixed(1)}x</span>

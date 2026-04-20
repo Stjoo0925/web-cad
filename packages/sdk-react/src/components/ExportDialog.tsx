@@ -3,7 +3,7 @@
  * @module components/ExportDialog
  */
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback } from "react";
 import type {
   ExportFormat,
   PngQuality,

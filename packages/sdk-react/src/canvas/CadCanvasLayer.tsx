@@ -29,9 +29,23 @@ export interface CadCanvasLayerProps {
   /** 마우스 이동 시 world 좌표 콜백 */
   onMouseMove?: (worldPos: Point) => void;
   /** 캔버스 클릭 시 world 좌표 콜백 */
-  onClick?: (worldPos: Point) => void;
+  onClick?: (
+    worldPos: Point,
+    modifiers?: { shift?: boolean; ctrl?: boolean },
+  ) => void;
   /** 캔버스 더블클릭 시 world 좌표 콜백 */
   onDoubleClick?: (worldPos: Point) => void;
+  /** 드래그 선택 박스 시작 콜백 */
+  onSelectionBoxStart?: (
+    worldPos: Point,
+    modifiers?: { shift?: boolean },
+  ) => void;
+  /** 드래그 선택 박스 종료 콜백 */
+  onSelectionBoxEnd?: (
+    worldStart: Point,
+    worldEnd: Point,
+    modifiers?: { shift?: boolean },
+  ) => void;
   /** 선택된 엔티티 ID 배열 */
   selectedIds?: string[];
   /** 선택된 엔티티 렌더링 스타일 */
@@ -48,6 +62,8 @@ export function CadCanvasLayer({
   onMouseMove,
   onClick,
   onDoubleClick,
+  onSelectionBoxStart,
+  onSelectionBoxEnd,
   selectedIds = [],
   selectedColor = "#0078d4",
 }: CadCanvasLayerProps) {
@@ -75,6 +91,11 @@ export function CadCanvasLayer({
 
   const [snapResult, setSnapResult] = useState<SnapResult | null>(null);
   const [mouseScreenPos, setMouseScreenPos] = useState<Point>({ x: 0, y: 0 });
+  const [selectionBox, setSelectionBox] = useState<{
+    start: Point;
+    end: Point;
+    shift: boolean;
+  } | null>(null);
 
   const snapEngine = useRef(createSnapEngine());
 
@@ -113,6 +134,24 @@ export function CadCanvasLayer({
       const worldMouse = screenToWorld(mouseScreenPos);
       renderOrthoGuides(ctx, snapResult.point, worldMouse, viewport);
     }
+
+    // 드래그 선택 박스 렌더링
+    if (selectionBox) {
+      const startScreen = worldToScreen(selectionBox.start, viewport);
+      const endScreen = worldToScreen(selectionBox.end, viewport);
+      const minX = Math.min(startScreen.x, endScreen.x);
+      const minY = Math.min(startScreen.y, endScreen.y);
+      const maxX = Math.max(startScreen.x, endScreen.x);
+      const maxY = Math.max(startScreen.y, endScreen.y);
+
+      ctx.strokeStyle = "#0078d4";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
+      ctx.fillStyle = "#0078d420";
+      ctx.fillRect(minX, minY, maxX - minX, maxY - minY);
+      ctx.setLineDash([]);
+    }
   }, [
     entities,
     viewport,
@@ -121,6 +160,7 @@ export function CadCanvasLayer({
     snapResult,
     mouseScreenPos,
     screenToWorld,
+    selectionBox,
   ]);
 
   // 스냅 포인트 계산
@@ -182,7 +222,7 @@ export function CadCanvasLayer({
       const rect = wrapper.getBoundingClientRect();
       const screenPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       const worldPos = screenToWorld(screenPoint);
-      onClick?.(worldPos);
+      onClick?.(worldPos, { shift: e.shiftKey, ctrl: e.ctrlKey });
     };
 
     // Double-click handler for polyline close
@@ -232,18 +272,30 @@ export function CadCanvasLayer({
       const rect = wrapper.getBoundingClientRect();
       const startX = e.clientX - rect.left;
       const startY = e.clientY - rect.top;
-      let dragged = false;
+      const startWorld = screenToWorld({ x: startX, y: startY });
+      let dragStarted = false;
+      let pendingSelectionBox: { start: Point; end: Point; shift: boolean } | null = null;
 
       const onMove = (moveEvent: PointerEvent) => {
         const dx = moveEvent.clientX - rect.left - startX;
         const dy = moveEvent.clientY - rect.top - startY;
+
         if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
-          dragged = true;
-          const newPan = {
-            x: viewport.pan.x + dx / viewport.zoom,
-            y: viewport.pan.y + dy / viewport.zoom,
-          };
-          onViewportChange?.({ ...viewport, pan: newPan });
+          if (!dragStarted) {
+            dragStarted = true;
+            // Start selection box
+            pendingSelectionBox = {
+              start: startWorld,
+              end: startWorld,
+              shift: moveEvent.shiftKey,
+            };
+          }
+
+          // Update selection box
+          const currentScreen = { x: moveEvent.clientX - rect.left, y: moveEvent.clientY - rect.top };
+          const currentWorld = screenToWorld(currentScreen);
+          pendingSelectionBox = pendingSelectionBox ? { ...pendingSelectionBox, end: currentWorld } : null;
+          setSelectionBox(pendingSelectionBox);
         }
       };
 
@@ -255,12 +307,26 @@ export function CadCanvasLayer({
         } catch {
           // ignore if already released
         }
+
+        // Complete selection box if exists
+        if (pendingSelectionBox) {
+          const endScreen = { x: upEvent.clientX - rect.left, y: upEvent.clientY - rect.top };
+          const endWorld = screenToWorld(endScreen);
+          onSelectionBoxEnd?.(pendingSelectionBox.start, endWorld, { shift: pendingSelectionBox.shift });
+        }
+        pendingSelectionBox = null;
+        setSelectionBox(null);
       };
+
+      // Emit selection box start if handler exists
+      if (onSelectionBoxStart) {
+        onSelectionBoxStart(startWorld, { shift: e.shiftKey });
+      }
 
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
     },
-    [viewport, onViewportChange],
+    [viewport, onViewportChange, screenToWorld, onSelectionBoxStart, onSelectionBoxEnd],
   );
 
   return (

@@ -723,7 +723,7 @@ export function CadPointCloudEditor({
 
   // Handle canvas click based on current tool
   const handleCanvasClick = useCallback(
-    (worldPos: Point) => {
+    (worldPos: Point, modifiers?: { shift?: boolean; ctrl?: boolean }) => {
       // Only apply snap if snap is enabled
       let point = worldPos;
       if (snapEnabled) {
@@ -772,8 +772,18 @@ export function CadPointCloudEditor({
             viewport,
           );
           if (hitEntity && selectableEntityIds.has(hitEntity.id)) {
-            setSelectedIds([hitEntity.id]);
-          } else {
+            if (modifiers?.shift || modifiers?.ctrl) {
+              // Toggle selection
+              if (selectedIds.includes(hitEntity.id)) {
+                setSelectedIds(selectedIds.filter((id) => id !== hitEntity.id));
+              } else {
+                setSelectedIds([...selectedIds, hitEntity.id]);
+              }
+            } else {
+              setSelectedIds([hitEntity.id]);
+            }
+          } else if (!modifiers?.shift && !modifiers?.ctrl) {
+            // Clear selection if clicking empty area without shift
             setSelectedIds([]);
           }
           break;
@@ -927,6 +937,42 @@ export function CadPointCloudEditor({
       }
     },
     [currentTool, handleEntityCreate],
+  );
+
+  // Handle selection box drag to select multiple entities
+  const handleSelectionBoxEnd = useCallback(
+    (worldStart: Point, worldEnd: Point, modifiers?: { shift?: boolean }) => {
+      const rect = {
+        minX: Math.min(worldStart.x, worldEnd.x),
+        minY: Math.min(worldStart.y, worldEnd.y),
+        maxX: Math.max(worldStart.x, worldEnd.x),
+        maxY: Math.max(worldStart.y, worldEnd.y),
+      };
+
+      // Find all entities within the rect
+      const { hitTestRect } = require("./tools/select-tool.js");
+      const hitEntities = hitTestRect(visibleEntities, rect);
+
+      if (hitEntities.length > 0) {
+        const hitIds = hitEntities
+          .filter((e: Entity) => selectableEntityIds.has(e.id))
+          .map((e: Entity) => e.id);
+
+        if (modifiers?.shift) {
+          // Add to existing selection
+          setSelectedIds((prev) => {
+            const newIds = hitIds.filter((id: string) => !prev.includes(id));
+            return [...prev, ...newIds];
+          });
+        } else {
+          setSelectedIds(hitIds);
+        }
+      } else if (!modifiers?.shift) {
+        // Clear selection if clicking empty area without shift
+        setSelectedIds([]);
+      }
+    },
+    [visibleEntities, selectableEntityIds],
   );
 
   if (viewMode === "2d-cad") {
@@ -1240,6 +1286,7 @@ export function CadPointCloudEditor({
               onMouseMove={handleCanvasMouseMove}
               onClick={handleCanvasClick}
               onDoubleClick={handleCanvasDoubleClick}
+              onSelectionBoxEnd={handleSelectionBoxEnd}
               selectedIds={selectedIds}
               canvasRef={canvasRef}
             />

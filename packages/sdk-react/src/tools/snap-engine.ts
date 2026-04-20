@@ -20,7 +20,9 @@ export const SNAP_TYPES = {
   MIDPOINT: "midpoint",
   INTERSECTION: "intersection",
   CENTER: "center",
-  NEAREST: "nearest"
+  NEAREST: "nearest",
+  PERPENDICULAR: "perpendicular",
+  TANGENT: "tangent"
 } as const;
 
 export type SnapType = (typeof SNAP_TYPES)[keyof typeof SNAP_TYPES];
@@ -33,7 +35,9 @@ const SNAP_PRIORITY: Record<SnapType, number> = {
   [SNAP_TYPES.MIDPOINT]: 80,
   [SNAP_TYPES.INTERSECTION]: 90,
   [SNAP_TYPES.CENTER]: 70,
-  [SNAP_TYPES.NEAREST]: 50
+  [SNAP_TYPES.NEAREST]: 50,
+  [SNAP_TYPES.PERPENDICULAR]: 85,
+  [SNAP_TYPES.TANGENT]: 75
 };
 
 export interface Point {
@@ -73,6 +77,30 @@ export interface SnapEngineOptions {
  */
 function distance(p1: Point, p2: Point): number {
   return Math.hypot(p2.x - p1.x, p2.y - p1.y);
+}
+
+/**
+ * 점에서 선까지의 수직 거리를 계산합니다.
+ */
+function perpendicularDistance(point: Point, lineStart: Point, lineEnd: Point): number {
+  const dx = lineEnd.x - lineStart.x;
+  const dy = lineEnd.y - lineStart.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-10) return distance(point, lineStart);
+  return Math.abs((dy * point.x - dx * point.y + lineEnd.x * lineStart.y - lineEnd.y * lineStart.x) / len);
+}
+
+/**
+ * 점에서 원까지의 접선 거리를 계산합니다.
+ */
+function tangentDistance(point: Point, center: Point, radius: number): number {
+  const d = distance(point, center);
+  if (d < radius) return 0;
+  const angle = Math.asin(radius / d);
+  return distance(point, {
+    x: center.x + radius * Math.cos(Math.atan2(point.y - center.y, point.x - center.x) + angle),
+    y: center.y + radius * Math.sin(Math.atan2(point.y - center.y, point.x - center.x) + angle)
+  });
 }
 
 /**
@@ -169,7 +197,7 @@ function getMidpointSnapPoints(entity: Entity): Point[] {
 }
 
 /**
- * 엔티티 쌍에서 교차점 스냅 포인트를 계산합니다.
+ * 엔티티에서 교차점 스냅 포인트를 계산합니다.
  */
 function getIntersectionSnapPoints(entity1: Entity, entity2: Entity): Point[] {
   const intersections: Point[] = [];
@@ -220,6 +248,81 @@ function getIntersectionSnapPoints(entity1: Entity, entity2: Entity): Point[] {
   }
 
   return intersections;
+}
+
+/**
+ * 엔티티에서 PERPENDICULAR(수직) 스냅 포인트를 계산합니다.
+ */
+function getPerpendicularSnapPoints(entity: Entity, fromPoint: Point): Point[] {
+  switch (entity.type) {
+    case "LINE":
+      if (entity.start && entity.end) {
+        const dx = entity.end.x - entity.start.x;
+        const dy = entity.end.y - entity.start.y;
+        const len = Math.hypot(dx, dy);
+        if (len < 1e-10) return [];
+        const t = Math.max(0, Math.min(1, ((fromPoint.x - entity.start.x) * dx + (fromPoint.y - entity.start.y) * dy) / (len * len)));
+        return [{
+          x: entity.start.x + t * dx,
+          y: entity.start.y + t * dy
+        }];
+      }
+      return [];
+    case "POLYLINE":
+    case "LWPOLYLINE":
+      if (!entity.vertices) return [];
+      const points: Point[] = [];
+      for (let i = 0; i < entity.vertices.length - 1; i++) {
+        const dx = entity.vertices[i + 1].x - entity.vertices[i].x;
+        const dy = entity.vertices[i + 1].y - entity.vertices[i].y;
+        const len = Math.hypot(dx, dy);
+        if (len < 1e-10) continue;
+        const t = Math.max(0, Math.min(1, ((fromPoint.x - entity.vertices[i].x) * dx + (fromPoint.y - entity.vertices[i].y) * dy) / (len * len)));
+        points.push({
+          x: entity.vertices[i].x + t * dx,
+          y: entity.vertices[i].y + t * dy
+        });
+      }
+      return points;
+    default:
+      return [];
+  }
+}
+
+/**
+ * 엔티티에서 TANGENT(접선) 스냅 포인트를 계산합니다.
+ */
+function getTangentSnapPoints(entity: Entity, fromPoint: Point): Point[] {
+  switch (entity.type) {
+    case "CIRCLE":
+      if (entity.center && entity.radius !== undefined) {
+        const dx = fromPoint.x - entity.center.x;
+        const dy = fromPoint.y - entity.center.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 1e-10) return [];
+        const angle = Math.atan2(dy, dx);
+        return [{
+          x: entity.center.x + entity.radius * Math.cos(angle),
+          y: entity.center.y + entity.radius * Math.sin(angle)
+        }];
+      }
+      return [];
+    case "ARC":
+      if (entity.center && entity.radius !== undefined) {
+        const dx = fromPoint.x - entity.center.x;
+        const dy = fromPoint.y - entity.center.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 1e-10) return [];
+        const angle = Math.atan2(dy, dx);
+        return [{
+          x: entity.center.x + entity.radius * Math.cos(angle),
+          y: entity.center.y + entity.radius * Math.sin(angle)
+        }];
+      }
+      return [];
+    default:
+      return [];
+  }
 }
 
 /**
@@ -292,6 +395,44 @@ export function createSnapEngine(options: SnapEngineOptions = {}) {
 
     if (candidates.length === 0) return null;
 
+    // PERPENDICULAR 스냅 처리
+    if (enabledTypes.includes(SNAP_TYPES.PERPENDICULAR)) {
+      for (const entity of entities) {
+        const perpPoints = getPerpendicularSnapPoints(entity, screenPoint);
+        for (const pp of perpPoints) {
+          const dist = distance(screenPoint, pp);
+          if (dist <= tolerance) {
+            candidates.push({
+              point: pp,
+              type: SNAP_TYPES.PERPENDICULAR,
+              distance: dist,
+              priority: SNAP_PRIORITY[SNAP_TYPES.PERPENDICULAR],
+              entityId: entity.id
+            });
+          }
+        }
+      }
+    }
+
+    // TANGENT 스냅 처리
+    if (enabledTypes.includes(SNAP_TYPES.TANGENT)) {
+      for (const entity of entities) {
+        const tangentPoints = getTangentSnapPoints(entity, screenPoint);
+        for (const tp of tangentPoints) {
+          const dist = distance(screenPoint, tp);
+          if (dist <= tolerance) {
+            candidates.push({
+              point: tp,
+              type: SNAP_TYPES.TANGENT,
+              distance: dist,
+              priority: SNAP_PRIORITY[SNAP_TYPES.TANGENT],
+              entityId: entity.id
+            });
+          }
+        }
+      }
+    }
+
     candidates.sort((a, b) => {
       if (b.priority !== a.priority) return b.priority - a.priority;
       return a.distance - b.distance;
@@ -313,6 +454,12 @@ export function createSnapEngine(options: SnapEngineOptions = {}) {
           break;
         case SNAP_TYPES.MIDPOINT:
           points = getMidpointSnapPoints(entity);
+          break;
+        case SNAP_TYPES.PERPENDICULAR:
+          points = getPerpendicularSnapPoints(entity, screenPoint);
+          break;
+        case SNAP_TYPES.TANGENT:
+          points = getTangentSnapPoints(entity, screenPoint);
           break;
         default:
           points = [];

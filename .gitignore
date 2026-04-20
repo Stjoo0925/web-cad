@@ -3,3 +3,6 @@ node_modules/
 dist/
 *.log
 .omc/
+.claude
+apps/web/*.js
+scripts/

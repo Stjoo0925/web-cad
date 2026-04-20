@@ -16,6 +16,7 @@ import { createCopyTool } from "./tools/copy-tool.js";
 import { createOffsetTool } from "./tools/offset-tool.js";
 import { createTrimTool } from "./tools/trim-tool.js";
 import { createExtendTool } from "./tools/extend-tool.js";
+import { createScaleTool } from "./tools/scale-tool.js";
 import { hitTestEntities } from "./tools/select-tool.js";
 import { LayersPanel } from "./panels/LayersPanel.js";
 import { PropertiesPanel } from "./panels/PropertiesPanel.js";
@@ -596,6 +597,7 @@ export function CadPointCloudEditor({
   const offsetToolRef = useRef(createOffsetTool({}));
   const trimToolRef = useRef(createTrimTool({}));
   const extendToolRef = useRef(createExtendTool({}));
+  const scaleToolRef = useRef(createScaleTool({}));
 
   // Snap engine
   const snapEngineRef = useRef(createSnapEngine({ tolerance: 12 }));
@@ -880,6 +882,28 @@ export function CadPointCloudEditor({
           }
           break;
         }
+        case "scale": {
+          const selectedEntities = entities.filter((e) => selectedIds.includes(e.id));
+          if (selectedEntities.length === 0) {
+            const hitEntity = hitTestEntities(visibleEntities, worldPos, viewport);
+            if (hitEntity && selectableEntityIds.has(hitEntity.id)) {
+              setSelectedIds([hitEntity.id]);
+            }
+          } else {
+            const result = scaleToolRef.current.handleClick(worldPos, selectedEntities);
+            if (result) {
+              setEntities((prev) => {
+                return prev.map((e) => {
+                  const scaled = result.find((r) => r.id === e.id);
+                  return scaled ?? e;
+                });
+              });
+              setCurrentTool("select");
+              setSelectedIds(result.map((e) => e.id));
+            }
+          }
+          break;
+        }
       }
     },
     [
@@ -1073,10 +1097,9 @@ export function CadPointCloudEditor({
               icon={<Icons.Scale />}
               label="Scale"
               shortcut="SC"
-              active={false}
-              onClick={() => {}}
-              disabled
-              title="Not yet implemented"
+              active={currentTool === "scale"}
+              onClick={() => handleToolClick("scale")}
+            />
             />
 
             <div

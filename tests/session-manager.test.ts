@@ -14,7 +14,7 @@ test("automatically checks out an entity, broadcasts previews, and releases on c
   const checkout = manager.beginEntityEdit({
     documentId: "doc-1",
     entityId: "line-1",
-    userId: "alice"
+    userId: "alice",
   });
 
   assert.equal(checkout.status, "acquired");
@@ -27,8 +27,8 @@ test("automatically checks out an entity, broadcasts previews, and releases on c
     draft: {
       type: "LINE",
       start: { x: 0, y: 0, z: 0 },
-      end: { x: 10, y: 0, z: 0 }
-    }
+      end: { x: 10, y: 0, z: 0 },
+    },
   });
 
   assert.throws(
@@ -36,9 +36,9 @@ test("automatically checks out an entity, broadcasts previews, and releases on c
       manager.beginEntityEdit({
         documentId: "doc-1",
         entityId: "line-1",
-        userId: "bob"
+        userId: "bob",
       }),
-    /checked out/i
+    /checked out/i,
   );
 
   const committed = manager.commitEntityEdit({
@@ -50,8 +50,8 @@ test("automatically checks out an entity, broadcasts previews, and releases on c
       type: "LINE",
       layer: "survey",
       start: { x: 0, y: 0, z: 0 },
-      end: { x: 10, y: 0, z: 0 }
-    }
+      end: { x: 10, y: 0, z: 0 },
+    },
   });
 
   assert.equal(committed.type, "entity.commit.applied");
@@ -60,10 +60,12 @@ test("automatically checks out an entity, broadcasts previews, and releases on c
     events.map((event) => event.type),
     [
       "entity.checkout.started",
+      "entity.locked",
       "entity.draft.updated",
       "entity.commit.applied",
-      "entity.checkout.released"
-    ]
+      "entity.checkout.released",
+      "entity.unlocked",
+    ],
   );
 });
 
@@ -73,13 +75,13 @@ test("allows concurrent editing of different entities in the same document", () 
   manager.beginEntityEdit({
     documentId: "doc-1",
     entityId: "line-1",
-    userId: "alice"
+    userId: "alice",
   });
 
   const secondCheckout = manager.beginEntityEdit({
     documentId: "doc-1",
     entityId: "point-1",
-    userId: "bob"
+    userId: "bob",
   });
 
   assert.equal(secondCheckout.status, "acquired");

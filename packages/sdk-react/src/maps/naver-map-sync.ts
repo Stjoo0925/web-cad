@@ -61,12 +61,16 @@ export function syncViewToMap(mapRef: NaverMapRef, viewport: Viewport, mapOrigin
   const center = cadPointToMapCenter(viewport.pan, mapOrigin);
   const zoom = cadZoomToMapLevel(viewport.zoom);
 
-  mapRef.current.setCenter(new (globalThis as unknown as { naver: { maps: { LatLng: new (lat: number, lng: number) => unknown } } } }).naver.maps.LatLng(center.lat, center.lng));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const NaverLatLng = (globalThis as any)?.naver?.maps?.LatLng;
+  if (NaverLatLng) {
+    mapRef.current.setCenter(new NaverLatLng(center.lat, center.lng));
+  }
   mapRef.current.setZoom(zoom);
 }
 
 export function syncMapToView(mapRef: NaverMapRef, mapOrigin: Point) {
-  if (!mapRef?.current) return () => {};
+  if (!mapRef?.current) return () => { };
 
   const listener = () => {
     const mapCenter = mapRef.current!.getCenter();
@@ -83,7 +87,7 @@ export function syncMapToView(mapRef: NaverMapRef, mapOrigin: Point) {
 }
 
 export function subscribeToMapEvents(mapRef: NaverMapRef, onViewChange: (view: { pan: Point; zoom: number }) => void) {
-  if (!mapRef?.current || !onViewChange) return () => {};
+  if (!mapRef?.current || !onViewChange) return () => { };
 
   const map = mapRef.current;
 
@@ -96,5 +100,5 @@ export function subscribeToMapEvents(mapRef: NaverMapRef, onViewChange: (view: {
     });
   };
 
-  return () => {};
+  return () => { };
 }

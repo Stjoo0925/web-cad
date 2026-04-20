@@ -99,7 +99,7 @@ function extendLineToIntersection(
  */
 function extendEntity(entity: Entity, boundary: Entity, extendPoint: Point): Entity {
   if (entity.type === "LINE" && entity.start && entity.end) {
-    // Check which end is closer to boundary, extend that end
+    // 어느 끝이 경계에 더 가까운지 확인 후 해당 끝을 연장
     const distToStart = Math.hypot(extendPoint.x - entity.start.x, extendPoint.y - entity.start.y);
     const distToEnd = Math.hypot(extendPoint.x - entity.end.x, extendPoint.y - entity.end.y);
 
@@ -115,7 +115,7 @@ function extendEntity(entity: Entity, boundary: Entity, extendPoint: Point): Ent
     entity.vertices &&
     entity.vertices.length > 0
   ) {
-    // Extend first or last vertex
+    // 첫 번째 또는 마지막 버텍스 연장
     const firstDist = Math.hypot(
       extendPoint.x - entity.vertices[0].x,
       extendPoint.y - entity.vertices[0].y,
@@ -154,7 +154,7 @@ export function createExtendTool(options: ExtendToolOptions = {}) {
    */
   function handleClick(point: Point, entities: Entity[]): Entity[] | null {
     if (!state.isPending) {
-      // First click: select boundary edge
+      // 첫 번째 클릭: 경계선 선택
       const hitEntity = entities.find((e) => {
         if (e.type === "LINE" && e.start && e.end) {
           const closest = closestPointOnSegment(point, e.start, e.end);
@@ -169,7 +169,7 @@ export function createExtendTool(options: ExtendToolOptions = {}) {
       }
       return null;
     } else {
-      // Second click: select target entity to extend
+      // 두 번째 클릭: 연장할 대상 엔티티 선택
       if (!state.boundaryEdge) return null;
 
       const targetEntity = entities.find((e) => {
@@ -184,7 +184,7 @@ export function createExtendTool(options: ExtendToolOptions = {}) {
       if (targetEntity) {
         state.targetEntity = targetEntity;
 
-        // Find intersection - extend target line to meet boundary line
+        // 교차점 찾기 - 대상 선을 경계선까지 연장
         let extendPoint: Point | null = null;
 
         if (
@@ -211,7 +211,7 @@ export function createExtendTool(options: ExtendToolOptions = {}) {
             onComplete(result);
           }
 
-          // Reset
+          // 초기화
           state.boundaryEdge = null;
           state.targetEntity = null;
           state.isPending = false;

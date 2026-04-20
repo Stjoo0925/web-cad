@@ -1,18 +1,18 @@
 /**
  * layer-manager.ts
- * Layer management module
+ * 레이어 관리 모듈
  *
- * Manages layer creation/deletion/rename, visibility, lock, color, and line weight.
+ * 레이어 생성/삭제/이름 변경, 가시성, 잠금, 색상, 선 굵기를 관리합니다.
  */
 
-// Default layer color palette (AutoCAD standard)
+// 기본 레이어 색상 팔레트 (AutoCAD 표준)
 export const DEFAULT_COLORS = [
   1, 2, 3, 4, 5, 6, 7, 8, 9,
   10, 11, 12, 13, 14, 15, 30, 40, 50,
   60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250
 ];
 
-// Default line weights in mm
+// 기본 선 굵기 (mm 단위)
 export const DEFAULT_LINE_WEIGHTS = [
   0.00, 0.05, 0.09, 0.13, 0.15, 0.18, 0.20, 0.25, 0.30, 0.35,
   0.40, 0.50, 0.53, 0.60, 0.70, 0.80, 0.90, 1.00, 1.06, 1.20,
@@ -60,7 +60,7 @@ export class LayerManager {
     this.layers = new Map();
     this.activeLayerName = options.activeLayerName || "0";
 
-    // Auto-create default "0" layer
+    // 기본 "0" 레이어 자동 생성
     this.createLayer({
       name: "0",
       color: 7,

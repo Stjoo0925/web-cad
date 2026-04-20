@@ -83,5 +83,5 @@ const server = http.createServer(async (request: http.IncomingMessage, response:
 });
 
 server.listen(port, () => {
-  console.log(`web-cad on-prem file server listening on ${port} with root ${runtime.rootDir}`);
+  console.log("web-cad on-prem file server listening on " + port + " with root " + runtime.rootDir);
 });

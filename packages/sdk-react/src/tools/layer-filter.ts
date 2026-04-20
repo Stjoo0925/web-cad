@@ -33,7 +33,7 @@ export interface Entity {
  * 필터 기준
  */
 export interface LayerFilterCriteria {
-  namePattern?: string;   // 레이어 이름 패턴 (部分一致)
+  namePattern?: string;   // 레이어 이름 패턴 (부분 일치)
   colors?: string[];       // 필터링할 색상 목록
   visible?: boolean;       // 가시성 상태
   locked?: boolean;        // 잠금 상태

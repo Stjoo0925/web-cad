@@ -95,7 +95,7 @@ export function createRealtimeClient(options: RealtimeClientOptions = {} as Real
   }
 
   /**
-   * WebSocket 연결을Establish 합니다.
+   * WebSocket 연결을 설정합니다.
    */
   function connect(docId?: string | null) {
     if (ws && ws.readyState === WebSocket.OPEN) {

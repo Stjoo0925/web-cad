@@ -52,7 +52,7 @@ export interface SceneOptions {
 }
 
 /**
- * Transform a point using origin offset (world to local coordinates)
+ * 원점 오프셋을 사용하여 점을 변환합니다 (월드 좌표에서 로컬 좌표로)
  */
 function worldToLocal(point: Point3D, origin: Point3D): Point3D {
   return {

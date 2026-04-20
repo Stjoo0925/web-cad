@@ -1,6 +1,6 @@
 /**
  * editor-store.ts
- * Editor state store with unified contracts
+ * 통합 계약을 가진 편집기 상태 저장소
  */
 export {
   EDITOR_TOOLS,

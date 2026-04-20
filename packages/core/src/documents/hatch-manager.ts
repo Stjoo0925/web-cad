@@ -1,11 +1,11 @@
 /**
  * hatch-manager.ts
- * Hatch/dimension/annotation entity management module
+ * 해치/치수/주석 엔티티 관리 모듈
  *
- * Manages HATCH, DIMENSION, LEADER (annotation leader), and MTEXT (multi-line text) entities.
+ * HATCH, DIMENSION, LEADER(주석 인도선), MTEXT(다중행 텍스트) 엔티티를 관리합니다.
  */
 
-// Major hatch pattern types
+// 주요 해치 패턴 타입
 export const HATCH_PATTERN_TYPES = {
   PREDEFINED: "predefined",
   USER_DEFINED: "user_defined",
@@ -14,7 +14,7 @@ export const HATCH_PATTERN_TYPES = {
 
 export type HatchPatternType = (typeof HATCH_PATTERN_TYPES)[keyof typeof HATCH_PATTERN_TYPES];
 
-// Hatch styles
+// 해치 스타일
 export const HATCH_STYLES = {
   NORMAL: "normal",
   OUTER: "outer",
@@ -23,7 +23,7 @@ export const HATCH_STYLES = {
 
 export type HatchStyle = (typeof HATCH_STYLES)[keyof typeof HATCH_STYLES];
 
-// Dimension types
+// 치수 타입
 export const DIMENSION_TYPES = {
   LINEAR: "linear",
   ALIGNED: "aligned",
@@ -199,7 +199,7 @@ export class HatchManager {
     return `${prefix}-${this._nextId++}`;
   }
 
-  // ========== HATCH ==========
+  // ========== 해치(HATCH) ==========
 
   createHatch({ patternType = HATCH_PATTERN_TYPES.PREDEFINED, pattern = "SOLID", boundaries = [], style = HATCH_STYLES.NORMAL, scale = 1, rotation = 0, layer = "0", color }: CreateHatchOptions = {}): HatchEntity {
     const hatch: HatchEntity = {
@@ -233,7 +233,7 @@ export class HatchManager {
     return this.hatches.delete(id);
   }
 
-  // ========== DIMENSION ==========
+  // ========== 치수(DIMENSION) ==========
 
   createDimension({ type, defPoint, midPoint, xline1Point, xline2Point, deflection = 0, angle, radius, diameter, text, layer = "0" }: CreateDimensionOptions): DimensionEntity {
     const dim: DimensionEntity = {
@@ -302,7 +302,7 @@ export class HatchManager {
     return this.dimensions.delete(id);
   }
 
-  // ========== LEADER ==========
+  // ========== 인도선(LEADER) ==========
 
   createLeader({ vertices, annotationType = "none", annotationId = null, layer = "0" }: CreateLeaderOptions): LeaderEntity {
     const leader: LeaderEntity = {
@@ -335,7 +335,7 @@ export class HatchManager {
     return this.leaders.delete(id);
   }
 
-  // ========== MTEXT ==========
+  // ========== 다중행 텍스트(MTEXT) ==========
 
   createMText({ text, x, y, height = 1, width = 0, attachment = "TL", style, rotation = 0, layer = "0" }: CreateMTextOptions): MTextEntity {
     const mtext: MTextEntity = {
@@ -370,7 +370,7 @@ export class HatchManager {
     return this.mtexts.delete(id);
   }
 
-  // ========== Serialization ==========
+  // ========== 직렬화 ==========
 
   toJSON(): { hatches: number; dimensions: number; leaders: number; mtexts: number } {
     return {

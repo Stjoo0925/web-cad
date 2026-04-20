@@ -31,7 +31,7 @@ await processLoop();
 setInterval(processLoop, 30_000);
 
 // 헬스체크 서버 (healthcheck용)
-const server = http.createServer(function(req: http.IncomingMessage, res: http.ServerResponse) {
+const server = http.createServer(function (req: http.IncomingMessage, res: http.ServerResponse) {
   const url = new URL(req.url ?? "/", "http://localhost:" + PORT);
   if (url.pathname === "/health/live" || url.pathname === "/health") {
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -42,12 +42,12 @@ const server = http.createServer(function(req: http.IncomingMessage, res: http.S
   res.end();
 });
 
-server.listen(PORT, function() {
+server.listen(PORT, function () {
   console.log("web-cad worker running, health on port " + PORT);
 });
 
-// graceful shutdown
-process.on("SIGTERM", function() {
+// 정상 종료 (graceful shutdown)
+process.on("SIGTERM", function () {
   console.log("worker shutting down...");
-  server.close(function() { process.exit(0); });
+  server.close(function () { process.exit(0); });
 });

@@ -2,7 +2,7 @@
  * rotate-command.ts
  * 회전(ROTATE) 명령 모듈
  *
- * 선택된 엔티티를 지정된 중심점周围 회전합니다.
+ * 선택된 엔티티를 지정된 중심점을 중심으로 회전합니다.
  * 상태: 'selecting' | 'base-point' | 'angle'
  */
 

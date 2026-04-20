@@ -999,6 +999,15 @@ export function CadPointCloudEditor({
           snapMode="Endpoint, Midpoint, Center"
           tool={currentTool}
         />
+
+        {/* Export dialog */}
+        {showExport && (
+          <ExportDialog
+            canvasRef={canvasRef}
+            onClose={() => setShowExport(false)}
+            defaultFilename="cad-export"
+          />
+        )}
       </div>
     );
   }

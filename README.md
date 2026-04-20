@@ -183,7 +183,7 @@ WEB_CAD_STORAGE_ROOT_HOST=D:\web-cad-storage
 ```bash
 curl http://localhost:4010/health/live   # api — 200 OK
 curl http://localhost:4011/health/live   # files — 200 OK
-curl http://localhost:4012/health/live   # health агрегатор — 200 OK
+curl http://localhost:4012/health/live   # health aggregator — 200 OK
 ```
 
 ---

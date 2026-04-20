@@ -97,7 +97,7 @@ const verified = verifyToken(token);
 const verified = verifyToken(token);
 
 // ❌ 잘못된 예 (다른 언어 사용 금지)
-// ユーザー認証トークンの検証
+// (예: 다른 언어로 작성된 주석)
 ```
 
 ---

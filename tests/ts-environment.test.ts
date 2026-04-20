@@ -13,9 +13,9 @@ test("tsconfig.json이 존재하고 유효해야 함", async () => {
   const content = await fs.readFile(tsconfigPath, "utf8");
   const config = JSON.parse(content);
 
-  assert.strictEqual(config.compilerOptions.strict, true, "strict mode必須");
-  assert.ok(config.compilerOptions.target, "target 설정必須");
-  assert.ok(config.include.includes("apps/**/*"), "apps 포함必須");
+  assert.strictEqual(config.compilerOptions.strict, true, "strict 모드가 활성화되어야 함");
+  assert.ok(config.compilerOptions.target, "target 설정이 필요함");
+  assert.ok(config.include.includes("apps/**/*"), "apps 포함 설정이 필요함");
 });
 
 test("TypeScript 패키지가 설치되어야 함", async () => {
@@ -24,9 +24,9 @@ test("TypeScript 패키지가 설치되어야 함", async () => {
   const pkg = JSON.parse(content);
   const devDeps = Object.keys(pkg.devDependencies || {});
 
-  assert.ok(devDeps.includes("typescript"), "typescript 설치必須");
-  assert.ok(devDeps.includes("@types/node"), "@types/node 설치必須");
-  assert.ok(devDeps.includes("@types/react"), "@types/react 설치必須");
+  assert.ok(devDeps.includes("typescript"), "typescript가 devDependencies에 있어야 함");
+  assert.ok(devDeps.includes("@types/node"), "@types/node가 devDependencies에 있어야 함");
+  assert.ok(devDeps.includes("@types/react"), "@types/react가 devDependencies에 있어야 함");
 });
 
 test("tsc --noEmit이 실행 가능해야 함", () => {

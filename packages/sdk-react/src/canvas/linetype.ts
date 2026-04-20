@@ -129,7 +129,7 @@ export function getLinetypePreviewSvg(linetype: Linetype): string {
   for (let i = 0; i < pattern.length; i++) {
     const len = pattern[i];
     if (i % 2 === 0) {
-      // 선分
+      // 선분
       pathD += `M${x},8 L${x + len},8 `;
     }
     x += len;

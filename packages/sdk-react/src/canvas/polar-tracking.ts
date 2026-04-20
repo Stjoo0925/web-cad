@@ -18,7 +18,7 @@ export interface PolarTrackingOptions {
   enabled?: boolean;
   /** 각도 단계 */
   angleStep?: PolarAngleStep;
-  /**自定义 추가 각도 */
+  /** 사용자 정의 추가 각도 */
   customAngles?: number[];
   /** 가이드 라인 길이 (픽셀) */
   guideLength?: number;
@@ -42,7 +42,7 @@ export interface PolarGuide {
   endPoint: Point;
   /** 해당 각도에 대한 설명 */
   label: string;
-  /**是否是捕捉到的角度 */
+  /** 스냅된 각도인지 여부 */
   isSnapAngle: boolean;
 }
 

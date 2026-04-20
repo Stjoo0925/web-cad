@@ -252,6 +252,7 @@ function renderArc(
   ctx.beginPath();
   ctx.arc(center.x, center.y, radius, startAngle, endAngle);
   ctx.stroke();
+  ctx.setLineDash([]);
 }
 
 function renderBlock(

@@ -22,7 +22,7 @@ export interface GripPoint {
   id: string;
   type: GripType;
   position: Point;
-  /**所属 엔티티 ID */
+  /** 소속 엔티티 ID */
   entityId: string;
   /** Grip 인덱스 (polyline vertex 등) */
   index?: number;

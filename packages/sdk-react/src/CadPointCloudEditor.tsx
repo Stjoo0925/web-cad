@@ -1216,6 +1216,35 @@ export function CadPointCloudEditor({
             >
               Export PNG
             </button>
+            <label
+              style={{
+                padding: "4px 12px",
+                border: "none",
+                borderRadius: "4px",
+                background: "#4d4d4d",
+                color: COLORS.text,
+                fontSize: "11px",
+                cursor: "pointer",
+              }}
+            >
+              Import DXF
+              <input
+                type="file"
+                accept=".dxf"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    import("./import/dxf-importer.js").then(({ parseDxfFile }) => {
+                      parseDxfFile(file).then((importedEntities) => {
+                        setEntities((prev) => [...prev, ...importedEntities]);
+                      });
+                    });
+                  }
+                  e.target.value = "";
+                }}
+              />
+            </label>
             <button
               onClick={() => {
                 import("./export/dxf-exporter.js").then(({ exportToDxf }) => {

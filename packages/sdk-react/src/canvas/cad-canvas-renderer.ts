@@ -26,6 +26,11 @@ export interface Entity {
   color?: string;
   lineWidth?: number;
   layer?: string;
+  /** Block reference */
+  blockName?: string;
+  blockPosition?: Point;
+  blockRotation?: number;
+  blockScale?: { x: number; y: number };
   [key: string]: unknown;
 }
 
@@ -38,7 +43,7 @@ export interface GridOptions {
 }
 
 /**
- * Draw grid lines on canvas
+ * 캔버스에 그리드 선을 그립니다.
  */
 export function drawGrid(
   ctx: CanvasRenderingContext2D,
@@ -103,6 +108,8 @@ export function renderEntity(
       return renderCircle(ctx, entity, viewport);
     case "ARC":
       return renderArc(ctx, entity, viewport);
+    case "BLOCK":
+      return renderBlock(ctx, entity, viewport);
     default:
       return;
   }
@@ -191,6 +198,30 @@ function renderArc(
   ctx.stroke();
 }
 
+function renderBlock(
+  ctx: CanvasRenderingContext2D,
+  entity: Entity,
+  viewport: Viewport,
+) {
+  // Block rendering - draw a placeholder rectangle with label
+  if (!entity.blockPosition) return;
+  const pos = worldToScreen(entity.blockPosition, viewport);
+  const scale = entity.blockScale ?? { x: 1, y: 1 };
+  const size = 30 * viewport.zoom;
+
+  ctx.strokeStyle = "#888888";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.strokeRect(pos.x - size / 2, pos.y - size / 2, size, size);
+  ctx.setLineDash([]);
+
+  // Draw block name label
+  ctx.fillStyle = "#888888";
+  ctx.font = "10px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(entity.blockName ?? "BLOCK", pos.x, pos.y + size / 2 + 12);
+}
+
 export function renderEntities(
   ctx: CanvasRenderingContext2D,
   entities: Entity[],
@@ -204,7 +235,7 @@ export function renderEntities(
       const originalColor = entity.color ?? "#333333";
       const originalLineWidth = entity.lineWidth ?? 1;
 
-      // Draw selection glow
+      // 선택 광량 효과 그리기
       ctx.strokeStyle = selectedColor + "40";
       ctx.lineWidth = originalLineWidth + 6;
       renderEntity(
@@ -217,7 +248,7 @@ export function renderEntities(
         viewport,
       );
 
-      // Draw selection highlight
+      // 선택 강조 표시 그리기
       ctx.strokeStyle = selectedColor;
       ctx.lineWidth = originalLineWidth + 2;
       renderEntity(
@@ -226,7 +257,7 @@ export function renderEntities(
         viewport,
       );
 
-      // Restore original
+      // 원본 복원
       ctx.strokeStyle = originalColor;
       ctx.lineWidth = originalLineWidth;
       renderEntity(ctx, entity, viewport);

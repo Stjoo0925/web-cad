@@ -142,19 +142,19 @@ services:
   web:
     build:
       context: .
-      dockerfile: ./apps/web/Dockerfile.web
+      dockerfile: ./apps/web/Dockerfile
       args:
         VITE_NAVER_MAP_CLIENT_ID: ${VITE_NAVER_MAP_CLIENT_ID:-}
     container_name: webcad-web
     ports:
-      - "${WEB_CAD_WEB_PORT:-3010}:3000"
+      - "${WEB_CAD_WEB_PORT:-3010}:3010"
     environment:
       VITE_NAVER_MAP_CLIENT_ID: ${VITE_NAVER_MAP_CLIENT_ID:-}
     depends_on:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:3010/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3

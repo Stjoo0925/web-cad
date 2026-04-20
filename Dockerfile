@@ -1,18 +1,19 @@
 FROM node:24-alpine
 
-WORKDIR /app
-
 RUN apk add --no-cache curl
 
-# Copy package files only (no node_modules — install inside container)
-COPY package.json package-lock.json* ./
+WORKDIR /app
 
-# Install dependencies inside container (Linux binaries)
+# Install dependencies (workspace packages)
+COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 
 # Copy source code
 COPY . .
 
+# Install tsx for TypeScript execution
+RUN npm install -g tsx
+
 ENV NODE_ENV=production
 
-CMD ["node", "apps/server/src/api-server.js"]
+# No CMD — docker-compose command overrides each service

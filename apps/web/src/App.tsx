@@ -7,12 +7,13 @@ const DEFAULT_DOC_ID = "survey-demo";
 const styles: Record<string, React.CSSProperties> = {
   root: {
     fontFamily: "system-ui, sans-serif",
-    minHeight: "100vh",
+    height: "100vh",
     display: "flex",
     flexDirection: "column",
     margin: 0,
     background: "#0f172a",
-    color: "#e2e8f0"
+    color: "#e2e8f0",
+    overflow: "hidden"
   },
   header: {
     display: "flex",
@@ -48,7 +49,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "16rem"
   },
   inputSmall: { width: "8rem" },
-  editorWrap: { flex: 1, display: "flex", flexDirection: "column" as const }
+  editorWrap: { flex: 1, display: "flex", flexDirection: "column" as const, overflow: "hidden", minHeight: 0 }
 };
 
 interface Env {

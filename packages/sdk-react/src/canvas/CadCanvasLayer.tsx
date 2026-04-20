@@ -14,7 +14,7 @@ const INITIAL_VIEWPORT = {
   height: 600,
   pan: { x: 0, y: 0 },
   zoom: 1,
-  origin: { x: 0, y: 0, z: 0 }
+  origin: { x: 0, y: 0 }
 };
 
 export interface CadCanvasLayerProps {
@@ -56,21 +56,22 @@ export function CadCanvasLayer({
       }
     });
 
-    resizeObserver.observe(canvas);
-    render();
-
-    return () => resizeObserver.disconnect();
-  }, [render]);
-
-  const handleWheel = useCallback(
-    (e: React.WheelEvent<HTMLCanvasElement>) => {
+    const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
       const newZoom = Math.max(0.05, Math.min(50, viewport.zoom * delta));
       onViewportChange?.({ ...viewport, zoom: newZoom });
-    },
-    [viewport, onViewportChange]
-  );
+    };
+
+    canvas.addEventListener("wheel", handleWheel, { passive: false });
+    resizeObserver.observe(canvas);
+    render();
+
+    return () => {
+      resizeObserver.disconnect();
+      canvas.removeEventListener("wheel", handleWheel);
+    };
+  }, [viewport, onViewportChange, render]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -116,7 +117,6 @@ export function CadCanvasLayer({
         height: "100%",
         cursor: "crosshair"
       }}
-      onWheel={handleWheel}
       onMouseDown={handleMouseDown}
     />
   );

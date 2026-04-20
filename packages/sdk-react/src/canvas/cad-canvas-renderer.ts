@@ -8,6 +8,7 @@ export interface Viewport {
   height: number;
   pan: Point;
   zoom: number;
+  origin?: Point;
 }
 
 export interface Entity {
@@ -38,7 +39,7 @@ export interface GridOptions {
 /**
  * Draw grid lines on canvas
  */
-export function drawGrid(ctx: CanvasRenderingContext2D, { width, height, origin, zoom, gridSize = 50 }: GridOptions) {
+export function drawGrid(ctx: CanvasRenderingContext2D, { width, height, origin = { x: 0, y: 0 }, zoom, gridSize = 50 }: GridOptions) {
   const scaledGridSize = gridSize * zoom;
   const offsetX = (origin.x * zoom) % scaledGridSize;
   const offsetY = (origin.y * zoom) % scaledGridSize;

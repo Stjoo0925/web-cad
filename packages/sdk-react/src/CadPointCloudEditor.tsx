@@ -51,23 +51,14 @@ export function CadPointCloudEditor({
         width: "100%",
         height: "100%",
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#f5f5f5",
-        color: "#666",
-        fontSize: "14px"
+        flexDirection: "column",
+        background: "#0f172a",
+        overflow: "hidden"
       }}
     >
-      <div style={{ textAlign: "center" }}>
-        <p>
-          <strong>CadPointCloudEditor</strong>
-        </p>
-        <p style={{ fontSize: "12px", color: "#888" }}>
-          viewMode: {viewMode}
-        </p>
-        <p style={{ fontSize: "11px", color: "#aaa", marginTop: "8px" }}>
-          포인트클라우드 모드
-        </p>
+      <div style={{ textAlign: "center", color: "#94a3b8" }}>
+        <p style={{ margin: "0 0 0.5rem" }}>CadPointCloudEditor</p>
+        <p style={{ fontSize: "12px", color: "#64748b" }}>viewMode: {viewMode}</p>
       </div>
     </div>
   );

@@ -10,6 +10,12 @@ import { createTextTool } from "./tools/text-tool.js";
 import { createPointTool } from "./tools/point-tool.js";
 import { createLineTool } from "./tools/line-tool.js";
 import { createPolylineTool } from "./tools/polyline-tool.js";
+import { createMoveTool } from "./tools/move-tool.js";
+import { createRotateTool } from "./tools/rotate-tool.js";
+import { createCopyTool } from "./tools/copy-tool.js";
+import { createOffsetTool } from "./tools/offset-tool.js";
+import { createTrimTool } from "./tools/trim-tool.js";
+import { createExtendTool } from "./tools/extend-tool.js";
 import { hitTestEntities } from "./tools/select-tool.js";
 import { LayersPanel } from "./panels/LayersPanel.js";
 import { PropertiesPanel } from "./panels/PropertiesPanel.js";
@@ -40,7 +46,11 @@ type ToolType =
   | "point"
   | "move"
   | "rotate"
-  | "scale";
+  | "scale"
+  | "copy"
+  | "offset"
+  | "trim"
+  | "extend";
 
 interface SnapIndicator {
   point: Point;
@@ -170,6 +180,63 @@ const Icons = {
       <rect x="11" y="11" width="4" height="4" />
       <line x1="9" y1="7" x2="11" y2="7" />
       <line x1="13" y1="9" x2="13" y2="11" />
+    </svg>
+  ),
+  Copy: () => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <rect x="4" y="4" width="10" height="12" rx="1" />
+      <rect x="8" y="2" width="10" height="12" rx="1" fill="#3d3d3d" />
+    </svg>
+  ),
+  Offset: () => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <line x1="3" y1="10" x2="17" y2="10" />
+      <line x1="3" y1="6" x2="17" y2="6" strokeDasharray="2,2" />
+      <line x1="3" y1="14" x2="17" y2="14" strokeDasharray="2,2" />
+    </svg>
+  ),
+  Trim: () => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <line x1="4" y1="4" x2="16" y2="16" />
+      <line x1="16" y1="4" x2="4" y2="16" />
+      <circle cx="10" cy="10" r="3" />
+    </svg>
+  ),
+  Extend: () => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <line x1="4" y1="10" x2="16" y2="10" />
+      <line x1="4" y1="10" x2="7" y2="7" />
+      <line x1="4" y1="10" x2="7" y2="13" />
+      <line x1="16" y1="10" x2="13" y2="7" />
+      <line x1="16" y1="10" x2="13" y2="13" />
     </svg>
   ),
   Grid: () => (
@@ -523,6 +590,12 @@ export function CadPointCloudEditor({
   const pointToolRef = useRef(createPointTool({}));
   const lineToolRef = useRef(createLineTool({}));
   const polylineToolRef = useRef(createPolylineTool({}));
+  const moveToolRef = useRef(createMoveTool({}));
+  const rotateToolRef = useRef(createRotateTool({}));
+  const copyToolRef = useRef(createCopyTool({}));
+  const offsetToolRef = useRef(createOffsetTool({}));
+  const trimToolRef = useRef(createTrimTool({}));
+  const extendToolRef = useRef(createExtendTool({}));
 
   // Snap engine
   const snapEngineRef = useRef(createSnapEngine({ tolerance: 12 }));
@@ -616,6 +689,10 @@ export function CadPointCloudEditor({
       else if (lower === "move") setCurrentTool("move");
       else if (lower === "rotate") setCurrentTool("rotate");
       else if (lower === "scale") setCurrentTool("scale");
+      else if (lower === "copy") setCurrentTool("copy");
+      else if (lower === "offset") setCurrentTool("offset");
+      else if (lower === "trim") setCurrentTool("trim");
+      else if (lower === "extend") setCurrentTool("extend");
       else if (lower === "clear") clearEntities();
       else if (lower === "reset") resetView();
     },
@@ -699,6 +776,110 @@ export function CadPointCloudEditor({
           }
           break;
         }
+        case "move": {
+          const selectedEntities = entities.filter((e) => selectedIds.includes(e.id));
+          if (selectedEntities.length === 0) {
+            // Select entity first if none selected
+            const hitEntity = hitTestEntities(visibleEntities, worldPos, viewport);
+            if (hitEntity && selectableEntityIds.has(hitEntity.id)) {
+              setSelectedIds([hitEntity.id]);
+            }
+          } else {
+            const result = moveToolRef.current.handleClick(worldPos, selectedEntities);
+            if (result) {
+              // Apply move
+              setEntities((prev) => {
+                const resultIds = new Set(result.map((e) => e.id));
+                return prev.map((e) => {
+                  const moved = result.find((r) => r.id === e.id);
+                  return moved ?? e;
+                });
+              });
+              // Exit move mode
+              setCurrentTool("select");
+              setSelectedIds(result.map((e) => e.id));
+            }
+          }
+          break;
+        }
+        case "rotate": {
+          const selectedEntities = entities.filter((e) => selectedIds.includes(e.id));
+          if (selectedEntities.length === 0) {
+            const hitEntity = hitTestEntities(visibleEntities, worldPos, viewport);
+            if (hitEntity && selectableEntityIds.has(hitEntity.id)) {
+              setSelectedIds([hitEntity.id]);
+            }
+          } else {
+            const result = rotateToolRef.current.handleClick(worldPos, selectedEntities);
+            if (result) {
+              setEntities((prev) => {
+                return prev.map((e) => {
+                  const rotated = result.find((r) => r.id === e.id);
+                  return rotated ?? e;
+                });
+              });
+              setCurrentTool("select");
+              setSelectedIds(result.map((e) => e.id));
+            }
+          }
+          break;
+        }
+        case "copy": {
+          const selectedEntities = entities.filter((e) => selectedIds.includes(e.id));
+          if (selectedEntities.length === 0) {
+            const hitEntity = hitTestEntities(visibleEntities, worldPos, viewport);
+            if (hitEntity && selectableEntityIds.has(hitEntity.id)) {
+              setSelectedIds([hitEntity.id]);
+            }
+          } else {
+            const result = copyToolRef.current.handleClick(worldPos, selectedEntities);
+            if (result) {
+              // Add copied entities
+              setEntities((prev) => [...prev, ...result]);
+              setCurrentTool("select");
+              setSelectedIds(result.map((e) => e.id));
+            }
+          }
+          break;
+        }
+        case "offset": {
+          const hitEntity = hitTestEntities(visibleEntities, worldPos, viewport);
+          if (hitEntity && selectableEntityIds.has(hitEntity.id)) {
+            const result = offsetToolRef.current.handleClick(worldPos, hitEntity);
+            if (result) {
+              setEntities((prev) => [...prev, ...result]);
+              setCurrentTool("select");
+              setSelectedIds(result.map((e) => e.id));
+            }
+          }
+          break;
+        }
+        case "trim": {
+          const result = trimToolRef.current.handleClick(worldPos, visibleEntities);
+          if (result) {
+            setEntities((prev) => {
+              return prev.map((e) => {
+                const trimmed = result.find((r) => r.id === e.id);
+                return trimmed ?? e;
+              });
+            });
+            setCurrentTool("select");
+          }
+          break;
+        }
+        case "extend": {
+          const result = extendToolRef.current.handleClick(worldPos, visibleEntities);
+          if (result) {
+            setEntities((prev) => {
+              return prev.map((e) => {
+                const extended = result.find((r) => r.id === e.id);
+                return extended ?? e;
+              });
+            });
+            setCurrentTool("select");
+          }
+          break;
+        }
       }
     },
     [
@@ -708,6 +889,8 @@ export function CadPointCloudEditor({
       snapEnabled,
       viewport,
       selectableEntityIds,
+      entities,
+      selectedIds,
     ],
   );
 
@@ -845,22 +1028,46 @@ export function CadPointCloudEditor({
 
             {/* Modify tools */}
             <ToolButton
+              icon={<Icons.Copy />}
+              label="Copy"
+              shortcut="CO"
+              active={currentTool === "copy"}
+              onClick={() => handleToolClick("copy")}
+            />
+            <ToolButton
+              icon={<Icons.Offset />}
+              label="Offset"
+              shortcut="O"
+              active={currentTool === "offset"}
+              onClick={() => handleToolClick("offset")}
+            />
+            <ToolButton
+              icon={<Icons.Trim />}
+              label="Trim"
+              shortcut="TR"
+              active={currentTool === "trim"}
+              onClick={() => handleToolClick("trim")}
+            />
+            <ToolButton
+              icon={<Icons.Extend />}
+              label="Extend"
+              shortcut="EX"
+              active={currentTool === "extend"}
+              onClick={() => handleToolClick("extend")}
+            />
+            <ToolButton
               icon={<Icons.Move />}
               label="Move"
               shortcut="M"
-              active={false}
-              onClick={() => {}}
-              disabled
-              title="Not yet implemented"
+              active={currentTool === "move"}
+              onClick={() => handleToolClick("move")}
             />
             <ToolButton
               icon={<Icons.Rotate />}
               label="Rotate"
               shortcut="RO"
-              active={false}
-              onClick={() => {}}
-              disabled
-              title="Not yet implemented"
+              active={currentTool === "rotate"}
+              onClick={() => handleToolClick("rotate")}
             />
             <ToolButton
               icon={<Icons.Scale />}

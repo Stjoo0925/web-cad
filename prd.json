@@ -1,86 +1,107 @@
 {
-  "version": "1.0",
+  "version": "3.0",
   "stories": [
     {
-      "id": "US-001",
-      "description": "Select tool hit detection 수정 — select-tool.ts의 hitTestEntities 사용",
+      "id": "US-301",
+      "description": "COPY command - copy entities with offset",
       "priority": 1,
-      "passes": true,
+      "passes": false,
       "acceptanceCriteria": [
-        "select-tool.ts의 hitTestEntities 함수를 CadPointCloudEditor.tsx로 import",
-        "handleCanvasClick의 select case에서 naive distance check를 hitTestEntities 호출로 교체",
-        "viewport 파라미터를 올바르게 전달 (zoom 고려)",
-        "선택된 엔티티의 id만 selectedIds에 설정"
+        "COPY 툴 버튼 클릭 시 복사 모드 활성화",
+        "엔티티 선택 후 클릭으로 복사본 생성",
+        "복사본은 원본과 다른 ID 보유",
+        "복사본 위치는 클릭한 지점 또는 지정 오프셋만큼 이동"
       ],
-      "files": ["packages/sdk-react/src/CadPointCloudEditor.tsx"],
-      "verification": "npm test 실행 시 cad-canvas-input 테스트 통과 (6/6 passed)"
+      "files": [
+        "packages/sdk-react/src/tools/copy-tool.ts",
+        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+      ],
+      "verification": "엔티티 선택 후 복사하여 두 개의 동일 엔티티 존재 확인"
     },
     {
-      "id": "US-002",
-      "description": "Snap toggle 버튼 동작하도록 수정",
+      "id": "US-302",
+      "description": "TRIM command - trim entities to cutting edges",
       "priority": 2,
-      "passes": true,
+      "passes": false,
       "acceptanceCriteria": [
-        "snapEnabled state 추가",
-        "Snap ToolButton의 active prop을 active={snapEnabled}로 변경",
-        "Snap ToolButton의 onClick을 onClick={() => setSnapEnabled(!snapEnabled)}로 변경",
-        "snapEngineRef에 snapEnabled 상태 전달"
+        "TRIM 툴 버튼 클릭 시 트림 모드 활성화",
+        "第一条 cutting edge 선택",
+        "第二条 잘라낼 엔티티 선택",
+        "교차점에서 잘라냄"
       ],
-      "files": ["packages/sdk-react/src/CadPointCloudEditor.tsx"],
-      "verification": "Snap 버튼 클릭 시 active 토글, snap 인디케이터 정상 작동"
+      "files": [
+        "packages/sdk-react/src/tools/trim-tool.ts",
+        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+      ],
+      "verification": "두 엔티티 교차점에서 잘라진 결과"
     },
     {
-      "id": "US-003",
-      "description": "Ribbon Tab switching 연결",
+      "id": "US-303",
+      "description": "EXTEND command - extend entities to boundaries",
       "priority": 3,
-      "passes": true,
+      "passes": false,
       "acceptanceCriteria": [
-        "activeTab state 추가 (useState)",
-        "Tab 클릭 핸들러 onTabChange 연결",
-        "active 상태 tab 하드코딩 제거 (i === 0 대신 activeTab 사용)",
-        "tab 변경 시 UI 업데이트"
+        "EXTEND 툴 버튼 클릭 시 확장 모드 활성화",
+        "boundary 엣지 선택",
+        "확장할 엔티티 선택",
+        "boundary까지 연장된 결과"
       ],
-      "files": ["packages/sdk-react/src/CadPointCloudEditor.tsx"],
-      "verification": "Annotate, View, Manage 탭 클릭 시 highlighting 변경"
+      "files": [
+        "packages/sdk-react/src/tools/extend-tool.ts",
+        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+      ],
+      "verification": "엔티티가 boundary까지 연장됨"
     },
     {
-      "id": "US-005",
-      "description": "StatusBar Z coordinate 하드코딩 제거",
-      "priority": 5,
-      "passes": true,
-      "acceptanceCriteria": [
-        "Z: 0.00 표시 제거 또는 viewport.z 또는 0 사용",
-        "2D 모드에서 불필요한 정보 제거"
-      ],
-      "files": ["packages/sdk-react/src/CadPointCloudEditor.tsx"],
-      "verification": "StatusBar에 불필요한 Z 정보 없음"
-    },
-    {
-      "id": "US-004",
-      "description": "panels/*.tsx PropertiesPanel 및 LayerPanel 연결",
+      "id": "US-304",
+      "description": "OFFSET command - offset entities by distance",
       "priority": 4,
-      "passes": true,
+      "passes": false,
       "acceptanceCriteria": [
-        "panels/PropertiesPanel.tsx import 및 사용",
-        "panels/LayersPanel.tsx import 및 사용",
-        "layers state 관리 (추가/삭제/가시성/잠금 핸들러)",
-        "entities 및 selectedIds state 연결"
+        "OFFSET 툴 버튼 클릭 시 오프셋 모드 활성화",
+        "오프셋 거리 입력 (팝업 또는 패널)",
+        "엔티티 선택 시 지정 거리만큼 평행이동한 복사본 생성",
+        "LINE/POLYLINE/CIRCLE 지원"
       ],
-      "files": ["packages/sdk-react/src/CadPointCloudEditor.tsx"],
-      "verification": "PropertiesPanel에 선택된 entity 정보 표시, LayerPanel에 레이어 목록 표시"
+      "files": [
+        "packages/sdk-react/src/tools/offset-tool.ts",
+        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+      ],
+      "verification": "LINE 오프셋 시 평행한 두 선이 일정 거리로 생성"
     },
     {
-      "id": "US-006",
-      "description": "Move/Rotate/Scale dead button 정리 또는 구현",
-      "priority": 6,
-      "passes": true,
+      "id": "US-305",
+      "description": "MOVE command - move entities by distance",
+      "priority": 5,
+      "passes": false,
       "acceptanceCriteria": [
-        "Move/Rotate/Scale 버튼 disabled 상태로 표시",
-        "disabled=true이면 회색 스타일 및 cursor: not-allowed",
-        "title에 Not yet implemented 표시"
+        "MOVE 툴 버튼 클릭 시 이동 모드 활성화",
+        "이동할 엔티티 선택",
+        "방향과 거리 지정 또는 두 포인트 클릭",
+        "선택한 엔티티들이 새 위치로 이동"
       ],
-      "files": ["packages/sdk-react/src/CadPointCloudEditor.tsx"],
-      "verification": "버튼 클릭 시 실제 동작 발생"
+      "files": [
+        "packages/sdk-react/src/tools/move-tool.ts",
+        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+      ],
+      "verification": "선택한 엔티티들이 새 위치로 이동"
+    },
+    {
+      "id": "US-306",
+      "description": "ROTATE command - rotate entities around center",
+      "priority": 6,
+      "passes": false,
+      "acceptanceCriteria": [
+        "ROTATE 툴 버튼 클릭 시 회전 모드 활성화",
+        "회전 중심점 선택 또는 기본 중심 사용",
+        "회전 각도 입력",
+        "엔티티들이 회전됨"
+      ],
+      "files": [
+        "packages/sdk-react/src/tools/rotate-tool.ts",
+        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+      ],
+      "verification": "회전된 엔티티 확인"
     }
   ]
 }

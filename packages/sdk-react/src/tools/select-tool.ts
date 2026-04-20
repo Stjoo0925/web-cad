@@ -217,6 +217,82 @@ export function hitTestEntities(
 }
 
 /**
+ * 주어진 화면 좌표와 히트되는 모든 엔티티를 찾습니다 (선택 박스용).
+ */
+export function hitTestAll(
+  entities: Entity[],
+  screenPoint: Point,
+  viewport: Viewport,
+  tolerance?: number,
+): Entity[] {
+  const zoom = viewport.zoom ?? 1;
+  const adjustedTolerance = tolerance ?? HIT_TOLERANCE / zoom;
+  return entities.filter((entity) =>
+    hitTest(entity, screenPoint, viewport, adjustedTolerance),
+  );
+}
+
+/**
+ * 사각형 영역 내 엔티티들을 찾습니다 (드래그 선택 박스).
+ */
+export function hitTestRect(
+  entities: Entity[],
+  rect: { minX: number; minY: number; maxX: number; maxY: number },
+): Entity[] {
+  return entities.filter((entity) => {
+    switch (entity.type) {
+      case "POINT":
+        if (entity.position) {
+          return (
+            entity.position.x >= rect.minX &&
+            entity.position.x <= rect.maxX &&
+            entity.position.y >= rect.minY &&
+            entity.position.y <= rect.maxY
+          );
+        }
+        return false;
+      case "LINE":
+        if (entity.start && entity.end) {
+          // Check if any point of the line is inside the rect
+          return (
+            (entity.start.x >= rect.minX && entity.start.x <= rect.maxX &&
+             entity.start.y >= rect.minY && entity.start.y <= rect.maxY) ||
+            (entity.end.x >= rect.minX && entity.end.x <= rect.maxX &&
+             entity.end.y >= rect.minY && entity.end.y <= rect.maxY)
+          );
+        }
+        return false;
+      case "CIRCLE":
+        if (entity.center && entity.radius !== undefined) {
+          // Check if circle center is inside rect (simplified)
+          return (
+            entity.center.x >= rect.minX &&
+            entity.center.x <= rect.maxX &&
+            entity.center.y >= rect.minY &&
+            entity.center.y <= rect.maxY
+          );
+        }
+        return false;
+      case "POLYLINE":
+      case "LWPOLYLINE":
+        if (entity.vertices && entity.vertices.length > 0) {
+          // Check if any vertex is inside the rect
+          return entity.vertices.some(
+            (v) =>
+              v.x >= rect.minX &&
+              v.x <= rect.maxX &&
+              v.y >= rect.minY &&
+              v.y <= rect.maxY,
+          );
+        }
+        return false;
+      default:
+        return false;
+    }
+  });
+}
+
+/**
  * 선택 목록을 관리하는 선택기 인스턴스를 생성합니다.
  */
 export function createSelectionManager(

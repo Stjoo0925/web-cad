@@ -47,11 +47,28 @@ interface EntityCheckoutReleasedEvent {
   timestamp: string;
 }
 
+interface EntityLockedEvent {
+  type: "entity.locked";
+  documentId: string;
+  entityId: string;
+  lockedBy: string;
+  timestamp: string;
+}
+
+interface EntityUnlockedEvent {
+  type: "entity.unlocked";
+  documentId: string;
+  entityId: string;
+  timestamp: string;
+}
+
 type CollaborationEvent =
   | EntityCheckoutStartedEvent
   | EntityDraftUpdatedEvent
   | EntityCommitAppliedEvent
-  | EntityCheckoutReleasedEvent;
+  | EntityCheckoutReleasedEvent
+  | EntityLockedEvent
+  | EntityUnlockedEvent;
 
 type EventListener = (event: CollaborationEvent) => void;
 
@@ -103,7 +120,9 @@ export class CollaborationSessionManager {
   private listeners: Set<EventListener>;
   private documents: Map<string, DocumentState>;
 
-  constructor({ now = () => new Date().toISOString() }: SessionManagerOptions = {}) {
+  constructor({
+    now = () => new Date().toISOString(),
+  }: SessionManagerOptions = {}) {
     this.now = now;
     this.listeners = new Set();
     this.documents = new Map();
@@ -132,21 +151,35 @@ export class CollaborationSessionManager {
     const existing = documentState.checkouts.get(entityId);
 
     if (existing && existing.userId !== userId) {
-      throw new Error(`Entity ${entityId} is already checked out by ${existing.userId}`);
+      throw new Error(
+        `Entity ${entityId} is already checked out by ${existing.userId}`,
+      );
     }
 
     const checkout: Checkout = {
       documentId,
       entityId,
       userId,
-      startedAt: this.now()
+      startedAt: this.now(),
     };
     documentState.checkouts.set(entityId, checkout);
     this.#emit({ type: "entity.checkout.started", ...checkout });
+    this.#emit({
+      type: "entity.locked",
+      documentId,
+      entityId,
+      lockedBy: userId,
+      timestamp: this.now(),
+    });
     return { status: "acquired", checkout };
   }
 
-  publishDraft({ documentId, entityId, userId, draft }: PublishDraftInput): EntityDraftUpdatedEvent {
+  publishDraft({
+    documentId,
+    entityId,
+    userId,
+    draft,
+  }: PublishDraftInput): EntityDraftUpdatedEvent {
     this.#assertCheckoutOwner({ documentId, entityId, userId });
     const event: EntityDraftUpdatedEvent = {
       type: "entity.draft.updated",
@@ -154,13 +187,18 @@ export class CollaborationSessionManager {
       entityId,
       userId,
       draft,
-      timestamp: this.now()
+      timestamp: this.now(),
     };
     this.#emit(event);
     return event;
   }
 
-  commitEntityEdit({ documentId, entityId, userId, entity }: CommitEntityEditInput): EntityCommitAppliedEvent {
+  commitEntityEdit({
+    documentId,
+    entityId,
+    userId,
+    entity,
+  }: CommitEntityEditInput): EntityCommitAppliedEvent {
     this.#assertCheckoutOwner({ documentId, entityId, userId });
     const documentState = this.#getDocumentState(documentId);
     const event: EntityCommitAppliedEvent = {
@@ -169,7 +207,7 @@ export class CollaborationSessionManager {
       entityId,
       userId,
       entity,
-      timestamp: this.now()
+      timestamp: this.now(),
     };
     this.#emit(event);
     documentState.checkouts.delete(entityId);
@@ -178,12 +216,22 @@ export class CollaborationSessionManager {
       documentId,
       entityId,
       userId,
-      timestamp: this.now()
+      timestamp: this.now(),
+    });
+    this.#emit({
+      type: "entity.unlocked",
+      documentId,
+      entityId,
+      timestamp: this.now(),
     });
     return event;
   }
 
-  cancelEntityEdit({ documentId, entityId, userId }: CancelEntityEditInput): EntityCheckoutReleasedEvent {
+  cancelEntityEdit({
+    documentId,
+    entityId,
+    userId,
+  }: CancelEntityEditInput): EntityCheckoutReleasedEvent {
     this.#assertCheckoutOwner({ documentId, entityId, userId });
     const documentState = this.#getDocumentState(documentId);
     documentState.checkouts.delete(entityId);
@@ -193,26 +241,38 @@ export class CollaborationSessionManager {
       entityId,
       userId,
       cancelled: true,
-      timestamp: this.now()
+      timestamp: this.now(),
     };
     this.#emit(event);
+    this.#emit({
+      type: "entity.unlocked",
+      documentId,
+      entityId,
+      timestamp: this.now(),
+    });
     return event;
   }
 
-  #assertCheckoutOwner({ documentId, entityId, userId }: BeginEntityEditInput): void {
+  #assertCheckoutOwner({
+    documentId,
+    entityId,
+    userId,
+  }: BeginEntityEditInput): void {
     const checkout = this.getCheckout(documentId, entityId);
     if (!checkout) {
       throw new Error(`Entity ${entityId} is not checked out`);
     }
     if (checkout.userId !== userId) {
-      throw new Error(`Entity ${entityId} is checked out by ${checkout.userId}`);
+      throw new Error(
+        `Entity ${entityId} is checked out by ${checkout.userId}`,
+      );
     }
   }
 
   #getDocumentState(documentId: string): DocumentState {
     if (!this.documents.has(documentId)) {
       this.documents.set(documentId, {
-        checkouts: new Map()
+        checkouts: new Map(),
       });
     }
     return this.documents.get(documentId)!;

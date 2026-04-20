@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { CadPointCloudEditor } from "../../../packages/sdk-react/src/index.js";
+import { CadPointCloudEditor } from "@web-cad/sdk-react";
 
 const DEFAULT_BASE_URL = "http://localhost:4010";
 const DEFAULT_DOC_ID = "survey-demo";
@@ -21,7 +21,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "0.75rem 1.5rem",
     background: "rgba(15, 23, 42, 0.95)",
     borderBottom: "1px solid rgba(148, 163, 184, 0.15)",
-    flexWrap: "wrap"
+    flexWrap: "wrap" as const
   },
   title: {
     margin: 0,
@@ -51,6 +51,10 @@ const styles: Record<string, React.CSSProperties> = {
   editorWrap: { flex: 1, display: "flex", flexDirection: "column" as const }
 };
 
+interface Env {
+  VITE_NAVER_MAP_CLIENT_ID?: string;
+}
+
 export function App() {
   const [baseUrl, setBaseUrl] = useState(DEFAULT_BASE_URL);
   const [documentId, setDocumentId] = useState(DEFAULT_DOC_ID);
@@ -59,9 +63,9 @@ export function App() {
   const [status, setStatus] = useState<string | null>(null);
   const [log, setLog] = useState<string[]>([]);
 
-  function addLog(msg: string) {
+  const addLog = (msg: string) => {
     setLog((prev) => [...prev.slice(-4), msg]);
-  }
+  };
 
   return React.createElement(
     "div",
@@ -79,7 +83,7 @@ export function App() {
         React.createElement("input", {
           style: styles.input,
           value: baseUrl,
-          onChange: (e) => setBaseUrl(e.target.value),
+          onChange: (e: React.ChangeEvent<HTMLInputElement>) => setBaseUrl(e.target.value),
           placeholder: DEFAULT_BASE_URL
         })
       ),
@@ -87,11 +91,11 @@ export function App() {
       React.createElement(
         "div",
         { style: styles.field },
-        React.createElement("span", { style: styles.label }, "문서 ID"),
+        React.createElement("span", { style: styles.label }, "Document ID"),
         React.createElement("input", {
           style: { ...styles.input, ...styles.inputSmall },
           value: documentId,
-          onChange: (e) => setDocumentId(e.target.value),
+          onChange: (e: React.ChangeEvent<HTMLInputElement>) => setDocumentId(e.target.value),
           placeholder: DEFAULT_DOC_ID
         })
       ),
@@ -103,8 +107,8 @@ export function App() {
         React.createElement("input", {
           style: { ...styles.input, width: "20rem" },
           value: token,
-          onChange: (e) => setToken(e.target.value),
-          placeholder: "Bearer 토큰 (선택)"
+          onChange: (e: React.ChangeEvent<HTMLInputElement>) => setToken(e.target.value),
+          placeholder: "Bearer token (optional)"
         })
       ),
 
@@ -115,10 +119,10 @@ export function App() {
           React.createElement("input", {
             type: "checkbox",
             checked: mapMode,
-            onChange: (e) => setMapMode(e.target.checked),
+            onChange: (e: React.ChangeEvent<HTMLInputElement>) => setMapMode(e.target.checked),
             style: { marginRight: "0.4rem" }
           }),
-          "네이버 지도"
+          "Naver Map"
         )
       ),
 
@@ -168,17 +172,17 @@ export function App() {
         documentId,
         viewMode: "2d-cad",
         mapProvider: mapMode ? "naver" : null,
-        naverMapClientId: mapMode ? ((import.meta as unknown as { env?: { VITE_NAVER_MAP_CLIENT_ID?: string } }).env?.VITE_NAVER_MAP_CLIENT_ID ?? "") : null,
+        naverMapClientId: mapMode ? (import.meta.env as unknown as Env).VITE_NAVER_MAP_CLIENT_ID ?? "" : null,
         onDocumentOpened: (doc) => {
           setStatus("ready");
-          addLog(`문서 열림: ${doc?.id ?? documentId}`);
+          addLog(`Document opened: ${doc?.id ?? documentId}`);
         },
-        onSaveStatus: (e) => addLog(`저장: ${e.status}`),
-        onSelectionChange: (ids) => addLog(`선택: [${ids.join(", ")}]`),
-        onUploadCompleted: (e) => addLog(`업로드 완료: ${e.assetId ?? ""}`),
+        onSaveStatus: (e) => addLog(`Save: ${e.status}`),
+        onSelectionChange: (ids) => addLog(`Selection: [${ids.join(", ")}]`),
+        onUploadCompleted: (e) => addLog(`Upload complete: ${e.assetId ?? ""}`),
         onError: (e) => {
           setStatus("error");
-          addLog(`오류: ${e.message ?? e.type}`);
+          addLog(`Error: ${e.message ?? e.type}`);
         }
       })
     )

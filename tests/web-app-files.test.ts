@@ -13,8 +13,8 @@ test("apps/web 스캐폴드 파일이 존재해야 함", async () => {
     "apps/web/package.json",
     "apps/web/vite.config.js",
     "apps/web/index.html",
-    "apps/web/src/main.jsx",
-    "apps/web/src/App.jsx"
+    "apps/web/src/main.tsx",
+    "apps/web/src/App.tsx"
   ];
 
   for (const relativePath of expectedFiles) {

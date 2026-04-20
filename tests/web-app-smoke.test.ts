@@ -6,17 +6,17 @@ import fs from "node:fs/promises";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-test("apps/web/src/main.jsx can be imported without throwing", async () => {
-  const mainPath = path.resolve(__dirname, "../apps/web/src/main.jsx");
+test("apps/web/src/main.tsx can be imported without throwing", async () => {
+  const mainPath = path.resolve(__dirname, "../apps/web/src/main.tsx");
   const content = await fs.readFile(mainPath, "utf8");
-  assert.ok(content.includes("ReactDOM"), "main.jsx should mount React root");
+  assert.ok(content.includes("ReactDOM"), "main.tsx should mount React root");
 });
 
-test("apps/web/src/App.jsx smoke test — App component exports a function", async () => {
-  const appPath = path.resolve(__dirname, "../apps/web/src/App.jsx");
+test("apps/web/src/App.tsx smoke test — App component exports a function", async () => {
+  const appPath = path.resolve(__dirname, "../apps/web/src/App.tsx");
   const content = await fs.readFile(appPath, "utf8");
-  assert.ok(content.includes("export default function App"), "App.jsx should export default App");
-  assert.ok(content.includes("CadPointCloudEditor"), "App.jsx should reference CadPointCloudEditor");
+  assert.ok(content.includes("export function App"), "App.tsx should export App");
+  assert.ok(content.includes("CadPointCloudEditor"), "App.tsx should reference CadPointCloudEditor");
 });
 
 test("apps/web/package.json has required scripts", async () => {
@@ -32,5 +32,5 @@ test("apps/web/index.html has root div and script entry", async () => {
   const htmlPath = path.resolve(__dirname, "../apps/web/index.html");
   const content = await fs.readFile(htmlPath, "utf8");
   assert.ok(content.includes('id="root"'), 'index.html should have id="root"');
-  assert.ok(content.includes("/src/main.jsx"), "index.html should reference main.jsx");
+  assert.ok(content.includes("/src/main.tsx"), "index.html should reference main.tsx");
 });

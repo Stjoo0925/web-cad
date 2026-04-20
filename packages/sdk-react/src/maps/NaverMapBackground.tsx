@@ -1,35 +1,28 @@
 import React, { useEffect, useMemo, useRef } from "react";
+import { buildNaverMapScriptUrl, createNaverMapOptions, type NaverMapOptions } from "./naver-map-config.js";
 
-import {
-  buildNaverMapScriptUrl,
-  createNaverMapOptions
-} from "./naver-map-config.js";
-
-function ensureNaverMapsScript({ naverMapClientId, callbackName }) {
+function ensureNaverMapsScript({ naverMapClientId, callbackName }: { naverMapClientId: string; callbackName: string }) {
   if (globalThis.window?.naver?.maps) {
     return Promise.resolve(globalThis.window.naver.maps);
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise<typeof globalThis.window.naver.maps>((resolve, reject) => {
     const existingScript = globalThis.document?.querySelector("script[data-sdk='naver-maps']");
     if (existingScript) {
-      existingScript.addEventListener("load", () => resolve(globalThis.window?.naver?.maps));
+      existingScript.addEventListener("load", () => resolve(globalThis.window?.naver?.maps!));
       existingScript.addEventListener("error", () => reject(new Error("Failed to load NAVER Maps script")));
       return;
     }
 
     globalThis.window[callbackName] = () => {
-      resolve(globalThis.window?.naver?.maps);
+      resolve(globalThis.window?.naver?.maps!);
       delete globalThis.window[callbackName];
     };
 
     const script = globalThis.document.createElement("script");
     script.dataset.sdk = "naver-maps";
     script.async = true;
-    script.src = buildNaverMapScriptUrl({
-      naverMapClientId,
-      callbackName
-    });
+    script.src = buildNaverMapScriptUrl({ naverMapClientId, callbackName });
     script.onerror = () => {
       reject(new Error("Failed to load NAVER Maps script"));
       delete globalThis.window[callbackName];
@@ -38,15 +31,17 @@ function ensureNaverMapsScript({ naverMapClientId, callbackName }) {
   });
 }
 
-export function NaverMapBackground({
-  naverMapClientId,
-  center,
-  zoom,
-  onMapReady,
-  onError
-}) {
-  const mapElementRef = useRef(null);
-  const mapRef = useRef(null);
+export interface NaverMapBackgroundProps {
+  naverMapClientId: string;
+  center?: { lat: number; lng: number };
+  zoom?: number;
+  onMapReady?: (map: unknown) => void;
+  onError?: (error: Error) => void;
+}
+
+export function NaverMapBackground({ naverMapClientId, center, zoom, onMapReady, onError }: NaverMapBackgroundProps) {
+  const mapElementRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<unknown>(null);
   const callbackName = useMemo(
     () => `__webCadNaverMapsReady_${Math.random().toString(36).slice(2)}`,
     []
@@ -55,20 +50,15 @@ export function NaverMapBackground({
   useEffect(() => {
     let cancelled = false;
 
-    void ensureNaverMapsScript({
-      naverMapClientId,
-      callbackName
-    })
+    void ensureNaverMapsScript({ naverMapClientId, callbackName })
       .then((naverMaps) => {
-        if (cancelled || !mapElementRef.current || !naverMaps) {
-          return;
-        }
+        if (cancelled || !mapElementRef.current || !naverMaps) return;
 
         const options = createNaverMapOptions({ center, zoom });
-        const map = new globalThis.window.naver.maps.Map(mapElementRef.current, {
-          center: new globalThis.window.naver.maps.LatLng(options.center.lat, options.center.lng),
+        const map = new naverMaps.Map(mapElementRef.current, {
+          center: new naverMaps.LatLng(options.center!.lat, options.center!.lng),
           zoom: options.zoom,
-          mapTypeId: globalThis.window.naver.maps.MapTypeId[options.mapTypeId],
+          mapTypeId: naverMaps.MapTypeId[options.mapTypeId as string],
           scaleControl: options.scaleControl,
           logoControl: options.logoControl,
           mapDataControl: options.mapDataControl
@@ -78,7 +68,7 @@ export function NaverMapBackground({
       })
       .catch((error) => {
         if (!cancelled) {
-          onError?.(error);
+          onError?.(error as Error);
         }
       });
 
@@ -92,10 +82,6 @@ export function NaverMapBackground({
     ref: mapElementRef,
     className: "cad-editor-map-background",
     "aria-hidden": true,
-    style: {
-      position: "absolute",
-      inset: 0,
-      zIndex: 0
-    }
+    style: { position: "absolute", inset: 0, zIndex: 0 }
   });
 }

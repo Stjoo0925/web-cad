@@ -3,7 +3,10 @@ import {
   drawGrid,
   renderEntities,
   clearCanvas,
-  worldToScreen
+  worldToScreen,
+  type Point,
+  type Entity,
+  type Viewport
 } from "./cad-canvas-renderer.js";
 
 const INITIAL_VIEWPORT = {
@@ -14,18 +17,25 @@ const INITIAL_VIEWPORT = {
   origin: { x: 0, y: 0, z: 0 }
 };
 
+export interface CadCanvasLayerProps {
+  entities?: Entity[];
+  viewport?: Viewport;
+  onViewportChange?: (viewport: Viewport) => void;
+}
+
 export function CadCanvasLayer({
   entities = [],
   viewport: viewportProp,
   onViewportChange
-}) {
-  const canvasRef = useRef(null);
+}: CadCanvasLayerProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewport = viewportProp ?? INITIAL_VIEWPORT;
 
   const render = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
+    if (!ctx) return;
     clearCanvas(ctx, canvas.width, canvas.height);
     drawGrid(ctx, viewport);
     renderEntities(ctx, entities, viewport);
@@ -53,7 +63,7 @@ export function CadCanvasLayer({
   }, [render]);
 
   const handleWheel = useCallback(
-    (e) => {
+    (e: React.WheelEvent<HTMLCanvasElement>) => {
       e.preventDefault();
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
       const newZoom = Math.max(0.05, Math.min(50, viewport.zoom * delta));
@@ -63,16 +73,17 @@ export function CadCanvasLayer({
   );
 
   const handleMouseDown = useCallback(
-    (e) => {
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
       if (e.button !== 0) return;
-      const rect = canvasRef.current.getBoundingClientRect();
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (!rect) return;
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
       const startX = mouseX;
       const startY = mouseY;
       let dragged = false;
 
-      const onMove = (moveEvent) => {
+      const onMove = (moveEvent: MouseEvent) => {
         const dx = moveEvent.clientX - rect.left - startX;
         const dy = moveEvent.clientY - rect.top - startY;
         if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {

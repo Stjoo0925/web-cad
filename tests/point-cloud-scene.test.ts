@@ -7,11 +7,11 @@ import fs from "node:fs/promises";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// PointCloudLayer.jsx 파일이 존재해야 함
-test("PointCloudLayer.jsx 파일이 존재해야 함", async () => {
-  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/point-cloud/PointCloudLayer.jsx");
+// PointCloudLayer.tsx 파일이 존재해야 함
+test("PointCloudLayer.tsx 파일이 존재해야 함", async () => {
+  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/point-cloud/PointCloudLayer.tsx");
   const exists = await fs.access(filePath).then(() => true).catch(() => false);
-  assert.ok(exists, "PointCloudLayer.jsx 파일이 존재해야 함");
+  assert.ok(exists, "PointCloudLayer.tsx 파일이 존재해야 함");
 });
 
 // point-cloud-scene.js 파일이 존재해야 함

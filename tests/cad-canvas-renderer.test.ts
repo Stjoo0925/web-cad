@@ -6,10 +6,10 @@ import fs from "node:fs/promises";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-test("CadCanvasLayer.jsx should exist", async () => {
-  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/canvas/CadCanvasLayer.jsx");
+test("CadCanvasLayer.tsx should exist", async () => {
+  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/canvas/CadCanvasLayer.tsx");
   const exists = await fs.access(filePath).then(() => true).catch(() => false);
-  assert.ok(exists, "CadCanvasLayer.jsx should exist");
+  assert.ok(exists, "CadCanvasLayer.tsx should exist");
 });
 
 test("cad-canvas-renderer.js should exist and export a render function", async () => {

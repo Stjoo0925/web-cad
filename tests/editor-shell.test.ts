@@ -6,10 +6,10 @@ import fs from "node:fs/promises";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-test("EditorShell.jsx 파일이 존재해야 함", async () => {
-  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/layout/EditorShell.jsx");
+test("EditorShell.tsx 파일이 존재해야 함", async () => {
+  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/layout/EditorShell.tsx");
   const exists = await fs.access(filePath).then(() => true).catch(() => false);
-  assert.ok(exists, "EditorShell.jsx 파일이 존재해야 함");
+  assert.ok(exists, "EditorShell.tsx 파일이 존재해야 함");
 });
 
 test("editor-shell.css 파일이 존재해야 함", async () => {
@@ -19,9 +19,9 @@ test("editor-shell.css 파일이 존재해야 함", async () => {
 });
 
 test("EditorShell은 함수를 export해야 함", async () => {
-  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/layout/EditorShell.jsx");
+  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/layout/EditorShell.tsx");
   const content = await fs.readFile(filePath, "utf8");
-  assert.ok(content.includes("export"), "EditorShell.jsx는 export가 있어야 함");
+  assert.ok(content.includes("export"), "EditorShell.tsx는 export가 있어야 함");
 });
 
 test("CSS는 grid 레이아웃을 정의해야 함", async () => {
@@ -33,8 +33,8 @@ test("CSS는 grid 레이아웃을 정의해야 함", async () => {
   );
 });
 
-test("CadPointCloudEditor.jsx가 존재해야 함", async () => {
-  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/CadPointCloudEditor.jsx");
+test("CadPointCloudEditor.tsx가 존재해야 함", async () => {
+  const filePath = path.resolve(__dirname, "../packages/sdk-react/src/CadPointCloudEditor.tsx");
   const exists = await fs.access(filePath).then(() => true).catch(() => false);
-  assert.ok(exists, "CadPointCloudEditor.jsx가 존재해야 함");
+  assert.ok(exists, "CadPointCloudEditor.tsx가 존재해야 함");
 });

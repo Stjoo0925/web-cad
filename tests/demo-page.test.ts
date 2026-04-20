@@ -9,14 +9,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // DemoApp.jsx 파일이 존재해야 함
 test("DemoApp.jsx 파일이 존재해야 함", async () => {
-  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.jsx");
+  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.tsx");
   const exists = await fs.access(filePath).then(() => true).catch(() => false);
   assert.ok(exists, "DemoApp.jsx 파일이 존재해야 함");
 });
 
 // Canvas 2D 렌더링 함수가 있어야 함
 test("Canvas 2D 렌더링 함수가 있어야 함", async () => {
-  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.jsx");
+  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.tsx");
   const content = await fs.readFile(filePath, "utf8");
   assert.ok(
     content.includes("canvas") || content.includes("Canvas") || content.includes("getContext"),
@@ -26,7 +26,7 @@ test("Canvas 2D 렌더링 함수가 있어야 함", async () => {
 
 // 그리드 렌더링 함수가 있어야 함
 test("그리드 렌더링 함수가 있어야 함", async () => {
-  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.jsx");
+  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.tsx");
   const content = await fs.readFile(filePath, "utf8");
   assert.ok(
     content.includes("grid") || content.includes("Grid") || content.includes("drawGrid"),
@@ -36,7 +36,7 @@ test("그리드 렌더링 함수가 있어야 함", async () => {
 
 // 도구 선택 함수가 있어야 함 (select, line, polyline)
 test("도구 선택 함수가 있어야 함", async () => {
-  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.jsx");
+  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.tsx");
   const content = await fs.readFile(filePath, "utf8");
   assert.ok(
     (content.includes("select") || content.includes("Select")) &&
@@ -47,7 +47,7 @@ test("도구 선택 함수가 있어야 함", async () => {
 
 // 뷰 모드 전환 함수가 있어야 함 (2D CAD / 포인트클라우드)
 test("뷰 모드 전환 함수가 있어야 함", async () => {
-  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.jsx");
+  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.tsx");
   const content = await fs.readFile(filePath, "utf8");
   assert.ok(
     content.includes("viewMode") || content.includes("setViewMode") || content.includes("2d") || content.includes("3d"),
@@ -57,7 +57,7 @@ test("뷰 모드 전환 함수가 있어야 함", async () => {
 
 // 샘플 엔티티 데이터가 있어야 함
 test("샘플 엔티티 데이터가 있어야 함", async () => {
-  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.jsx");
+  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.tsx");
   const content = await fs.readFile(filePath, "utf8");
   assert.ok(
     content.includes("entities") || content.includes("sample") || content.includes("demo"),
@@ -67,7 +67,7 @@ test("샘플 엔티티 데이터가 있어야 함", async () => {
 
 // 레이어 목록이 있어야 함
 test("레이어 목록이 있어야 함", async () => {
-  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.jsx");
+  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.tsx");
   const content = await fs.readFile(filePath, "utf8");
   assert.ok(
     content.includes("layer") || content.includes("Layer"),
@@ -77,7 +77,7 @@ test("레이어 목록이 있어야 함", async () => {
 
 // 마우스 이벤트 핸들러가 있어야 함 (pan, zoom)
 test("마우스 이벤트 핸들러가 있어야 함", async () => {
-  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.jsx");
+  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.tsx");
   const content = await fs.readFile(filePath, "utf8");
   assert.ok(
     content.includes("onMouseDown") || content.includes("onMouseMove") || content.includes("onWheel") ||
@@ -88,7 +88,7 @@ test("마우스 이벤트 핸들러가 있어야 함", async () => {
 
 // DemoApp 컴포넌트가 export되어 있어야 함
 test("DemoApp 컴포넌트가 export되어 있어야 함", async () => {
-  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.jsx");
+  const filePath = path.resolve(__dirname, "../apps/web/src/DemoApp.tsx");
   const content = await fs.readFile(filePath, "utf8");
   assert.ok(
     content.includes("export") && (content.includes("DemoApp") || content.includes("default")),

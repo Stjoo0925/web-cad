@@ -39,7 +39,10 @@ export interface GridOptions {
 /**
  * Draw grid lines on canvas
  */
-export function drawGrid(ctx: CanvasRenderingContext2D, { width, height, origin = { x: 0, y: 0 }, zoom, gridSize = 50 }: GridOptions) {
+export function drawGrid(
+  ctx: CanvasRenderingContext2D,
+  { width, height, origin = { x: 0, y: 0 }, zoom, gridSize = 50 }: GridOptions,
+) {
   const scaledGridSize = gridSize * zoom;
   const offsetX = (origin.x * zoom) % scaledGridSize;
   const offsetY = (origin.y * zoom) % scaledGridSize;
@@ -78,11 +81,15 @@ export function worldToScreen(point: Point, viewport: Viewport): Point {
   const cy = viewport.height / 2;
   return {
     x: (point.x - viewport.pan.x) * viewport.zoom + cx,
-    y: (point.y - viewport.pan.y) * viewport.zoom + cy
+    y: (point.y - viewport.pan.y) * viewport.zoom + cy,
   };
 }
 
-export function renderEntity(ctx: CanvasRenderingContext2D, entity: Entity, viewport: Viewport) {
+export function renderEntity(
+  ctx: CanvasRenderingContext2D,
+  entity: Entity,
+  viewport: Viewport,
+) {
   switch (entity.type) {
     case "POINT":
       return renderPoint(ctx, entity, viewport);
@@ -100,15 +107,26 @@ export function renderEntity(ctx: CanvasRenderingContext2D, entity: Entity, view
   }
 }
 
-function renderPoint(ctx: CanvasRenderingContext2D, entity: Entity, viewport: Viewport) {
-  const p = worldToScreen(entity.position ?? entity as unknown as Point, viewport);
+function renderPoint(
+  ctx: CanvasRenderingContext2D,
+  entity: Entity,
+  viewport: Viewport,
+) {
+  const p = worldToScreen(
+    entity.position ?? (entity as unknown as Point),
+    viewport,
+  );
   ctx.fillStyle = entity.color ?? "#333333";
   ctx.beginPath();
   ctx.arc(p.x, p.y, 3 * Math.max(viewport.zoom, 0.5), 0, Math.PI * 2);
   ctx.fill();
 }
 
-function renderLine(ctx: CanvasRenderingContext2D, entity: Entity, viewport: Viewport) {
+function renderLine(
+  ctx: CanvasRenderingContext2D,
+  entity: Entity,
+  viewport: Viewport,
+) {
   if (!entity.start || !entity.end) return;
   const start = worldToScreen(entity.start, viewport);
   const end = worldToScreen(entity.end, viewport);
@@ -120,7 +138,11 @@ function renderLine(ctx: CanvasRenderingContext2D, entity: Entity, viewport: Vie
   ctx.stroke();
 }
 
-function renderPolyline(ctx: CanvasRenderingContext2D, entity: Entity, viewport: Viewport) {
+function renderPolyline(
+  ctx: CanvasRenderingContext2D,
+  entity: Entity,
+  viewport: Viewport,
+) {
   if (!entity.vertices || entity.vertices.length === 0) return;
   ctx.strokeStyle = entity.color ?? "#333333";
   ctx.lineWidth = entity.lineWidth ?? 1;
@@ -136,7 +158,11 @@ function renderPolyline(ctx: CanvasRenderingContext2D, entity: Entity, viewport:
   ctx.stroke();
 }
 
-function renderCircle(ctx: CanvasRenderingContext2D, entity: Entity, viewport: Viewport) {
+function renderCircle(
+  ctx: CanvasRenderingContext2D,
+  entity: Entity,
+  viewport: Viewport,
+) {
   if (!entity.center || entity.radius === undefined) return;
   const center = worldToScreen(entity.center, viewport);
   const radius = entity.radius * viewport.zoom;
@@ -147,7 +173,11 @@ function renderCircle(ctx: CanvasRenderingContext2D, entity: Entity, viewport: V
   ctx.stroke();
 }
 
-function renderArc(ctx: CanvasRenderingContext2D, entity: Entity, viewport: Viewport) {
+function renderArc(
+  ctx: CanvasRenderingContext2D,
+  entity: Entity,
+  viewport: Viewport,
+) {
   if (!entity.center || entity.radius === undefined) return;
   const center = worldToScreen(entity.center, viewport);
   const radius = entity.radius * viewport.zoom;
@@ -160,13 +190,170 @@ function renderArc(ctx: CanvasRenderingContext2D, entity: Entity, viewport: View
   ctx.stroke();
 }
 
-export function renderEntities(ctx: CanvasRenderingContext2D, entities: Entity[], viewport: Viewport) {
+export function renderEntities(
+  ctx: CanvasRenderingContext2D,
+  entities: Entity[],
+  viewport: Viewport,
+  selectedIds: string[] = [],
+  selectedColor = "#0078d4",
+) {
   for (const entity of entities) {
-    renderEntity(ctx, entity, viewport);
+    const isSelected = selectedIds.includes(entity.id);
+    if (isSelected) {
+      const originalColor = entity.color ?? "#333333";
+      const originalLineWidth = entity.lineWidth ?? 1;
+
+      // Draw selection glow
+      ctx.strokeStyle = selectedColor + "40";
+      ctx.lineWidth = originalLineWidth + 6;
+      renderEntity(ctx, { ...entity, color: selectedColor + "40", lineWidth: originalLineWidth + 6 }, viewport);
+
+      // Draw selection highlight
+      ctx.strokeStyle = selectedColor;
+      ctx.lineWidth = originalLineWidth + 2;
+      renderEntity(ctx, { ...entity, color: selectedColor, lineWidth: originalLineWidth + 2 }, viewport);
+
+      // Restore original
+      ctx.strokeStyle = originalColor;
+      ctx.lineWidth = originalLineWidth;
+      renderEntity(ctx, entity, viewport);
+    } else {
+      renderEntity(ctx, entity, viewport);
+    }
   }
 }
 
-export function clearCanvas(ctx: CanvasRenderingContext2D, width: number, height: number, backgroundColor = "#ffffff") {
+export function clearCanvas(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  backgroundColor = "#ffffff",
+) {
   ctx.fillStyle = backgroundColor;
   ctx.fillRect(0, 0, width, height);
+}
+
+/**
+ * 스냅 타입에 따른 색상 반환
+ */
+export function getSnapColor(snapType: string): string {
+  switch (snapType) {
+    case "endpoint":
+      return "#00ff00"; // 녹색
+    case "midpoint":
+      return "#ffff00"; // 노란색
+    case "intersection":
+      return "#ff00ff"; // 마젠타
+    case "center":
+      return "#00ffff"; // 시안
+    case "perpendicular":
+      return "#ff8800"; // 주황
+    case "tangent":
+      return "#ff00ff"; // 마젠타
+    default:
+      return "#00ffff"; // 시안 (nearest)
+  }
+}
+
+/**
+ * 스냅 포인트와 타입 라벨을 렌더링합니다.
+ */
+export function renderSnapPoint(
+  ctx: CanvasRenderingContext2D,
+  snapPoint: Point,
+  snapType: string,
+  viewport: Viewport,
+  options?: { showCrosshair?: boolean; showLabel?: boolean },
+) {
+  const { showCrosshair = true, showLabel = true } = options ?? {};
+  const screenPoint = worldToScreen(snapPoint, viewport);
+  const color = getSnapColor(snapType);
+  const SNAP_CIRCLE_RADIUS = 5;
+
+  // 스냅 포인트 원 그리기
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(screenPoint.x, screenPoint.y, SNAP_CIRCLE_RADIUS, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // 스냅 포인트 내부를 채움
+  ctx.fillStyle = color + "40"; // 반투명
+  ctx.beginPath();
+  ctx.arc(screenPoint.x, screenPoint.y, SNAP_CIRCLE_RADIUS, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 십자선 (AutoCAD 스타일 가이드)
+  if (showCrosshair) {
+    ctx.strokeStyle = color + "60"; // 반투명
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+
+    // 좌우 가로선
+    ctx.beginPath();
+    ctx.moveTo(0, screenPoint.y);
+    ctx.lineTo(screenPoint.x - SNAP_CIRCLE_RADIUS - 2, screenPoint.y);
+    ctx.moveTo(screenPoint.x + SNAP_CIRCLE_RADIUS + 2, screenPoint.y);
+    ctx.lineTo(ctx.canvas.width, screenPoint.y);
+    ctx.stroke();
+
+    // 상하 세로선
+    ctx.beginPath();
+    ctx.moveTo(screenPoint.x, 0);
+    ctx.lineTo(screenPoint.x, screenPoint.y - SNAP_CIRCLE_RADIUS - 2);
+    ctx.moveTo(screenPoint.x, screenPoint.y + SNAP_CIRCLE_RADIUS + 2);
+    ctx.lineTo(screenPoint.x, ctx.canvas.height);
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+  }
+
+  // 스냅 타입 라벨
+  if (showLabel) {
+    const label = snapType.toUpperCase();
+    ctx.font = "bold 11px monospace";
+    const textWidth = ctx.measureText(label).width;
+    const padding = 3;
+    const labelX = screenPoint.x + SNAP_CIRCLE_RADIUS + 4;
+    const labelY = screenPoint.y - 8;
+
+    // 라벨 배경
+    ctx.fillStyle = color;
+    ctx.fillRect(labelX, labelY - 10, textWidth + padding * 2, 13);
+
+    // 라벨 텍스트
+    ctx.fillStyle = "#000000";
+    ctx.fillText(label, labelX + padding, labelY);
+  }
+}
+
+/**
+ * Ortho 모드 가이드선을 렌더링합니다.
+ */
+export function renderOrthoGuides(
+  ctx: CanvasRenderingContext2D,
+  fromPoint: Point,
+  toPoint: Point,
+  viewport: Viewport,
+) {
+  const from = worldToScreen(fromPoint, viewport);
+  const to = worldToScreen(toPoint, viewport);
+
+  ctx.strokeStyle = "#00ffff40";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+
+  // 수평선
+  ctx.beginPath();
+  ctx.moveTo(Math.min(from.x, to.x), from.y);
+  ctx.lineTo(Math.max(from.x, to.x), from.y);
+  ctx.stroke();
+
+  // 수직선
+  ctx.beginPath();
+  ctx.moveTo(from.x, Math.min(from.y, to.y));
+  ctx.lineTo(from.x, Math.max(from.y, to.y));
+  ctx.stroke();
+
+  ctx.setLineDash([]);
 }

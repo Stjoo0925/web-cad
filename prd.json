@@ -1,107 +1,110 @@
 {
-  "version": "3.0",
+  "version": "4.0",
   "stories": [
     {
-      "id": "US-301",
-      "description": "COPY command - copy entities with offset",
+      "id": "US-401",
+      "description": "Block insert - insert block/reference entities",
       "priority": 1,
       "passes": false,
       "acceptanceCriteria": [
-        "COPY 툴 버튼 클릭 시 복사 모드 활성화",
-        "엔티티 선택 후 클릭으로 복사본 생성",
-        "복사본은 원본과 다른 ID 보유",
-        "복사본 위치는 클릭한 지점 또는 지정 오프셋만큼 이동"
+        "BLOCK 툴 버튼 클릭 시 블록 삽입 모드 활성화",
+        "블록 정의에서 엔티티 목록 선택",
+        "선택한 위치에 블록 인스턴스 생성",
+        "BlockEntity 타입 supported in renderer"
       ],
       "files": [
-        "packages/sdk-react/src/tools/copy-tool.ts",
+        "packages/sdk-react/src/tools/block-tool.ts",
+        "packages/sdk-react/src/canvas/cad-canvas-renderer.ts",
         "packages/sdk-react/src/CadPointCloudEditor.tsx"
       ],
-      "verification": "엔티티 선택 후 복사하여 두 개의 동일 엔티티 존재 확인"
+      "verification": "블록 선택 후 캔버스에 블록 인스턴스 생성됨"
     },
     {
-      "id": "US-302",
-      "description": "TRIM command - trim entities to cutting edges",
+      "id": "US-402",
+      "description": "DXF export - export entities to DXF format",
       "priority": 2,
       "passes": false,
       "acceptanceCriteria": [
-        "TRIM 툴 버튼 클릭 시 트림 모드 활성화",
-        "第一条 cutting edge 선택",
-        "第二条 잘라낼 엔티티 선택",
-        "교차점에서 잘라냄"
+        "ExportDialog에 DXF 포맷 옵션 추가",
+        "엔티티를 DXF ASCII 포맷으로 변환",
+        "LINE, CIRCLE, ARC, POLYLINE 엔티티 내보내기",
+        "파일 다운로드 정상 동작"
       ],
       "files": [
-        "packages/sdk-react/src/tools/trim-tool.ts",
+        "packages/sdk-react/src/components/ExportDialog.tsx",
+        "packages/sdk-react/src/export/dxf-exporter.ts",
         "packages/sdk-react/src/CadPointCloudEditor.tsx"
       ],
-      "verification": "두 엔티티 교차점에서 잘라진 결과"
+      "verification": "DXF 파일 다운로드하여 CAD 소프트웨어에서 열림"
     },
     {
-      "id": "US-303",
-      "description": "EXTEND command - extend entities to boundaries",
+      "id": "US-403",
+      "description": "DXF import - import DXF files",
       "priority": 3,
       "passes": false,
       "acceptanceCriteria": [
-        "EXTEND 툴 버튼 클릭 시 확장 모드 활성화",
-        "boundary 엣지 선택",
-        "확장할 엔티티 선택",
-        "boundary까지 연장된 결과"
+        "Import 버튼 또는 드래그앤드롭으로 DXF 파일 입력",
+        "DXF 파싱하여 엔티티 리스트 생성",
+        "파싱된 엔티티를 canvas에 렌더링",
+        "기본 레이어에 할당"
       ],
       "files": [
-        "packages/sdk-react/src/tools/extend-tool.ts",
+        "packages/sdk-react/src/components/ImportDialog.tsx",
+        "packages/sdk-react/src/import/dxf-importer.ts",
         "packages/sdk-react/src/CadPointCloudEditor.tsx"
       ],
-      "verification": "엔티티가 boundary까지 연장됨"
+      "verification": "DXF 파일 가져와서 캔버스에 표시됨"
     },
     {
-      "id": "US-304",
-      "description": "OFFSET command - offset entities by distance",
+      "id": "US-404",
+      "description": "Multiple entity selection - shift+click multi-select",
       "priority": 4,
       "passes": false,
       "acceptanceCriteria": [
-        "OFFSET 툴 버튼 클릭 시 오프셋 모드 활성화",
-        "오프셋 거리 입력 (팝업 또는 패널)",
-        "엔티티 선택 시 지정 거리만큼 평행이동한 복사본 생성",
-        "LINE/POLYLINE/CIRCLE 지원"
+        "Shift+Click로 여러 엔티티 선택 추가",
+        "Ctrl+Click로 토글 선택",
+        "選択解除 support",
+        "multi-selected entities have correct rendering"
       ],
       "files": [
-        "packages/sdk-react/src/tools/offset-tool.ts",
+        "packages/sdk-react/src/tools/select-tool.ts",
         "packages/sdk-react/src/CadPointCloudEditor.tsx"
       ],
-      "verification": "LINE 오프셋 시 평행한 두 선이 일정 거리로 생성"
+      "verification": "여러 엔티티 Shift+Click으로 선택됨"
     },
     {
-      "id": "US-305",
-      "description": "MOVE command - move entities by distance",
+      "id": "US-405",
+      "description": "Selection box - drag rectangle to select multiple",
       "priority": 5,
       "passes": false,
       "acceptanceCriteria": [
-        "MOVE 툴 버튼 클릭 시 이동 모드 활성화",
-        "이동할 엔티티 선택",
-        "방향과 거리 지정 또는 두 포인트 클릭",
-        "선택한 엔티티들이 새 위치로 이동"
+        "드래그로 사각형 선택 영역 생성",
+        "框内 엔티티 자동 선택",
+        "Shift+Drag로 현재 선택에 추가",
+        "선택 박스 시각적 피드백"
       ],
       "files": [
-        "packages/sdk-react/src/tools/move-tool.ts",
-        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+        "packages/sdk-react/src/CadCanvasLayer.tsx",
+        "packages/sdk-react/src/tools/select-tool.ts"
       ],
-      "verification": "선택한 엔티티들이 새 위치로 이동"
+      "verification": "드래그한 영역 내 엔티티들이 선택됨"
     },
     {
-      "id": "US-306",
-      "description": "ROTATE command - rotate entities around center",
+      "id": "US-406",
+      "description": "Scale command - scale entities by factor",
       "priority": 6,
       "passes": false,
       "acceptanceCriteria": [
-        "ROTATE 툴 버튼 클릭 시 회전 모드 활성화",
-        "회전 중심점 선택 또는 기본 중심 사용",
-        "회전 각도 입력",
-        "엔티티들이 회전됨"
+        "SCALE 툴 버튼 클릭 시 스케일 모드 활성화",
+        "기준점 선택",
+        "스케일 팩터 입력 (숫자 또는 두 포인트 비율)",
+        "엔티티들이 스케일 변환됨"
       ],
       "files": [
-        "packages/sdk-react/src/tools/rotate-tool.ts",
+        "packages/sdk-react/src/tools/scale-tool.ts",
         "packages/sdk-react/src/CadPointCloudEditor.tsx"
       ],
-      "verification": "회전된 엔티티 확인"
+      "verification": "엔티티가 指定比例로 확대/축소됨"
     }
   ]
 }

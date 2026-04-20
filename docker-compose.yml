@@ -141,7 +141,7 @@ services:
   # =====================================================================
   web:
     build:
-      context: .
+      context: ./apps/web
       dockerfile: Dockerfile.web
       args:
         VITE_NAVER_MAP_CLIENT_ID: ${VITE_NAVER_MAP_CLIENT_ID:-}

@@ -40,14 +40,14 @@ Web CAD On-Prem은 다음과 같은 기능을 제공합니다:
 
 ### 서비스
 
-| 서비스 | 포트 | 설명 |
-|--------|------|------|
-| `db` | 5432 | PostgreSQL 16 Alpine — 문서 및 사용자 데이터 |
-| `api` | 4010 | Express REST API — 인증, 문서, 협업 이벤트 |
-| `worker` | 4013 | 백그라운드 수집 프로세서 — 30초 폴링 루프 |
-| `files` | 4011 | 정적 파일 서버 — 스토리지 에셋 제공 |
-| `health` | 4012 | Docker healthcheck용 서비스 상태 집계기 |
-| `web` | 3000 | Vite 개발 서버 — React 데모 UI (운영: Nginx) |
+| 서비스   | 포트 | 설명                                         |
+| -------- | ---- | -------------------------------------------- |
+| `db`     | 5432 | PostgreSQL 16 Alpine — 문서 및 사용자 데이터 |
+| `api`    | 4010 | Express REST API — 인증, 문서, 협업 이벤트   |
+| `worker` | 4013 | 백그라운드 수집 프로세서 — 30초 폴링 루프    |
+| `files`  | 4011 | 정적 파일 서버 — 스토리지 에셋 제공          |
+| `health` | 4012 | Docker healthcheck용 서비스 상태 집계기      |
+| `web`    | 3000 | Vite 개발 서버 — React 데모 UI (운영: Nginx) |
 
 ---
 
@@ -92,7 +92,7 @@ npm run dev:web          # Vite 개발 서버 시작 (포트 3000)
 ```
 apps/server/src/        API, 워커, 파일 서버 엔트리포인트
 packages/core/src/      인증, 협업, 문서, 스토리지, 지오메트리 로직
-packages/sdk-core/src/   호스트向け SDK 클라이언트 (바닐라 JS/TS)
+packages/sdk-core/src/   호스트대상 SDK 클라이언트 (바닐라 JS/TS)
 packages/sdk-react/src/  React 연동 컴포넌트 (EditorShell, CadPointCloudEditor)
 tests/                  node:test 검증 스위트
 ```
@@ -139,10 +139,10 @@ sdk.subscribe("selection", (ids) => console.log(ids));
 
 스토리지 경로는 환경변수로 설정 가능 — 하드코딩된 경로 없음.
 
-| 환경변수 | 기본값 | 설명 |
-|----------|--------|------|
-| `WEB_CAD_STORAGE_ROOT_HOST` | `./data` | 호스트 머신 스토리지 루트 |
-| `WEB_CAD_STORAGE_ROOT_CONTAINER` | `/app/storage` | 컨테이너 측 마운트 경로 |
+| 환경변수                         | 기본값         | 설명                      |
+| -------------------------------- | -------------- | ------------------------- |
+| `WEB_CAD_STORAGE_ROOT_HOST`      | `./data`       | 호스트 머신 스토리지 루트 |
+| `WEB_CAD_STORAGE_ROOT_CONTAINER` | `/app/storage` | 컨테이너 측 마운트 경로   |
 
 ```bash
 # Linux/macOS

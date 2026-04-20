@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { RibbonToolbar, type ToolType } from "./RibbonToolbar.js";
 import { LayerPanel, type Layer } from "./LayerPanel.js";
 import { PropertiesPanel, type EntityProperty } from "./PropertiesPanel.js";
@@ -11,6 +11,13 @@ import {
   createPolylineTool,
   type PolylineEntity,
 } from "../tools/polyline-tool.js";
+import { createCircleTool, type CircleEntity } from "../tools/circle-tool.js";
+import { createArcTool, type ArcEntity } from "../tools/arc-tool.js";
+import { createPointTool, type PointEntity } from "../tools/point-tool.js";
+import { createTextTool, type TextEntity } from "../tools/text-tool.js";
+import { createMoveCommand } from "../commands/move-command.js";
+import { createRotateCommand } from "../commands/rotate-command.js";
+import { createScaleCommand } from "../commands/scale-command.js";
 
 interface EditorShellProps {
   initialEntities?: Entity[];
@@ -123,6 +130,55 @@ export function EditorShell({
   const [orthoEnabled, setOrthoEnabled] = useState(false);
   const [mouseCoords, setMouseCoords] = useState({ x: 0, y: 0 });
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [history, setHistory] = useState<Entity[][]>([[]]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+
+  // Push current state to history
+  const pushHistory = useCallback(
+    (newEntities: Entity[]) => {
+      setHistory((prev) => {
+        const newHistory = prev.slice(0, historyIndex + 1);
+        newHistory.push([...newEntities]);
+        return newHistory;
+      });
+      setHistoryIndex((prev) => prev + 1);
+    },
+    [historyIndex],
+  );
+
+  // Undo: restore previous state
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      setHistoryIndex((prev) => prev - 1);
+      setEntities(history[historyIndex - 1]);
+    }
+  }, [historyIndex, history]);
+
+  // Redo: restore next state
+  const redo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex((prev) => prev + 1);
+      setEntities(history[historyIndex + 1]);
+    }
+  }, [historyIndex, history]);
+
+  // Keyboard shortcuts for undo/redo (Ctrl+Z / Ctrl+Y)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === "y" || (e.shiftKey && e.key === "z"))
+      ) {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo]);
 
   const [lineTool] = useState(() =>
     createLineTool({
@@ -158,6 +214,74 @@ export function EditorShell({
     }),
   );
 
+  const [circleTool] = useState(() =>
+    createCircleTool({
+      onComplete: (entity: CircleEntity) => {
+        const newEntity: Entity = {
+          id: entity.id,
+          type: entity.type,
+          center: entity.center,
+          radius: entity.radius,
+          layer: entity.layer,
+          color: entity.color,
+        };
+        setEntities((prev) => [...prev, newEntity]);
+        onEntityAdd?.(newEntity);
+      },
+    }),
+  );
+
+  const [arcTool] = useState(() =>
+    createArcTool({
+      onComplete: (entity: ArcEntity) => {
+        const newEntity: Entity = {
+          id: entity.id,
+          type: entity.type,
+          center: entity.center,
+          radius: entity.radius,
+          startAngle: entity.startAngle,
+          endAngle: entity.endAngle,
+          layer: entity.layer,
+          color: entity.color,
+        };
+        setEntities((prev) => [...prev, newEntity]);
+        onEntityAdd?.(newEntity);
+      },
+    }),
+  );
+
+  const [pointTool] = useState(() =>
+    createPointTool({
+      onComplete: (entity: PointEntity) => {
+        const newEntity: Entity = {
+          id: entity.id,
+          type: entity.type,
+          position: entity.position,
+          layer: entity.layer,
+          color: entity.color,
+        };
+        setEntities((prev) => [...prev, newEntity]);
+        onEntityAdd?.(newEntity);
+      },
+    }),
+  );
+
+  const [textTool] = useState(() =>
+    createTextTool({
+      onComplete: (entity: TextEntity) => {
+        const newEntity: Entity = {
+          id: entity.id,
+          type: entity.type,
+          position: entity.position,
+          layer: entity.layer,
+          color: entity.color,
+        };
+        setEntities((prev) => [...prev, newEntity]);
+        onEntityAdd?.(newEntity);
+      },
+    }),
+  );
+
   const handleViewportChange = useCallback(
     (newViewport: Viewport) => {
       setViewport(newViewport);
@@ -173,9 +297,17 @@ export function EditorShell({
         lineTool.cancel();
       } else if (tool === "polyline") {
         polylineTool.cancel();
+      } else if (tool === "circle") {
+        circleTool.cancel();
+      } else if (tool === "arc") {
+        arcTool.cancel();
+      } else if (tool === "point") {
+        pointTool.cancel();
+      } else if (tool === "text") {
+        textTool.cancel();
       }
     },
-    [lineTool, polylineTool],
+    [lineTool, polylineTool, circleTool, arcTool, pointTool, textTool],
   );
 
   const handleCommand = useCallback(
@@ -188,9 +320,13 @@ export function EditorShell({
       } else if (cmd === "POLYLINE" || cmd === "PL") {
         setActiveTool("polyline");
       } else if (cmd === "CIRCLE" || cmd === "C") {
-        const newEntity = makeEntity("CIRCLE");
-        setEntities((prev) => [...prev, newEntity]);
-        onEntityAdd?.(newEntity);
+        setActiveTool("circle");
+      } else if (cmd === "ARC" || cmd === "A") {
+        setActiveTool("arc");
+      } else if (cmd === "POINT" || cmd === "PT") {
+        setActiveTool("point");
+      } else if (cmd === "TEXT" || cmd === "T") {
+        setActiveTool("text");
       } else if (cmd === "CLEAR") {
         setEntities([]);
       } else if (cmd === "RESET") {
@@ -224,9 +360,26 @@ export function EditorShell({
         } else {
           polylineTool.handleClick({ x: worldX, y: worldY });
         }
+      } else if (activeTool === "circle") {
+        circleTool.handleClick({ x: worldX, y: worldY });
+      } else if (activeTool === "arc") {
+        arcTool.handleClick({ x: worldX, y: worldY });
+      } else if (activeTool === "point") {
+        pointTool.handleClick({ x: worldX, y: worldY });
+      } else if (activeTool === "text") {
+        textTool.handleClick({ x: worldX, y: worldY });
       }
     },
-    [activeTool, lineTool, polylineTool, viewport],
+    [
+      activeTool,
+      lineTool,
+      polylineTool,
+      circleTool,
+      arcTool,
+      pointTool,
+      textTool,
+      viewport,
+    ],
   );
 
   const handleCanvasMouseMove = useCallback(
@@ -243,9 +396,13 @@ export function EditorShell({
         lineTool.handleMove({ x: worldX, y: worldY });
       } else if (activeTool === "polyline") {
         polylineTool.handleMove({ x: worldX, y: worldY });
+      } else if (activeTool === "circle") {
+        circleTool.handleMove({ x: worldX, y: worldY });
+      } else if (activeTool === "arc") {
+        arcTool.handleMove({ x: worldX, y: worldY });
       }
     },
-    [activeTool, lineTool, polylineTool, viewport],
+    [activeTool, lineTool, polylineTool, circleTool, arcTool, viewport],
   );
 
   const selectedEntity =
@@ -307,10 +464,7 @@ export function EditorShell({
           onCollapse={() => setLeftPanelCollapsed((prev) => !prev)}
         />
 
-        <div
-          data-cad-viewport-surface
-          style={VIEWPORT_STYLE}
-        >
+        <div data-cad-viewport-surface style={VIEWPORT_STYLE}>
           <CadCanvasLayer
             entities={entities}
             viewport={viewport}

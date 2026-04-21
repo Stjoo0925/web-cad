@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, useState } from "react";
+import React, { useRef, useEffect, useCallback, useState, useMemo } from "react";
 import {
   drawGrid,
   renderEntities,
@@ -15,6 +15,8 @@ import {
   SNAP_TYPES,
   type SnapResult,
 } from "../tools/snap-engine.js";
+import { Quadtree, createDefaultBounds } from "../../../core/src/geometry/quadtree.js";
+import type { BoundingBox } from "../../../core/src/geometry/spatial-index.js";
 
 export interface CadCanvasLayerProps {
   entities?: Entity[];
@@ -128,6 +130,79 @@ export function CadCanvasLayer({
   const snapEngine = useRef(createSnapEngine());
   const suppressNextClickRef = useRef(false);
 
+  // Create spatial index for viewport culling
+  const spatialIndex = useMemo(() => {
+    return new Quadtree(createDefaultBounds());
+  }, []);
+
+  // Rebuild spatial index when entities change
+  useEffect(() => {
+    spatialIndex.clear();
+    for (const entity of entities) {
+      const bounds = computeEntityBounds(entity);
+      if (bounds) {
+        spatialIndex.insert({ id: entity.id, bounds, type: entity.type, data: entity });
+      }
+    }
+  }, [entities, spatialIndex]);
+
+  // Compute entity bounding box for spatial indexing
+  const computeEntityBounds = (entity: Entity): BoundingBox | null => {
+    const { start, end, center, radius, vertices, position } = entity;
+
+    if (vertices && vertices.length > 0) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const v of vertices) {
+        minX = Math.min(minX, v.x);
+        minY = Math.min(minY, v.y);
+        maxX = Math.max(maxX, v.x);
+        maxY = Math.max(maxY, v.y);
+      }
+      return { minX, minY, maxX, maxY };
+    }
+
+    if (start && end) {
+      return {
+        minX: Math.min(start.x, end.x),
+        minY: Math.min(start.y, end.y),
+        maxX: Math.max(start.x, end.x),
+        maxY: Math.max(start.y, end.y),
+      };
+    }
+
+    if (center && radius !== undefined) {
+      return {
+        minX: center.x - radius,
+        minY: center.y - radius,
+        maxX: center.x + radius,
+        maxY: center.y + radius,
+      };
+    }
+
+    if (position) {
+      return {
+        minX: position.x,
+        minY: position.y,
+        maxX: position.x,
+        maxY: position.y,
+      };
+    }
+
+    return null;
+  };
+
+  // Get visible bounds from viewport
+  const getVisibleBounds = useCallback((): BoundingBox => {
+    const halfWidth = viewport.width / 2 / viewport.zoom;
+    const halfHeight = viewport.height / 2 / viewport.zoom;
+    return {
+      minX: viewport.pan.x - halfWidth,
+      minY: viewport.pan.y - halfHeight,
+      maxX: viewport.pan.x + halfWidth,
+      maxY: viewport.pan.y + halfHeight,
+    };
+  }, [viewport]);
+
   const screenToWorld = useCallback(
     (screenPoint: Point): Point => {
       const cx = viewport.width / 2;
@@ -148,7 +223,18 @@ export function CadCanvasLayer({
 
     clearCanvas(ctx, canvas.width, canvas.height);
     drawGrid(ctx, { ...viewport, gridSize });
-    renderEntities(ctx, entities, viewport, selectedIds, selectedColor);
+
+    // Viewport culling using spatial index
+    const visibleBounds = getVisibleBounds();
+    const visibleEntities = spatialIndex.query(visibleBounds);
+    const culledIds = new Set(visibleEntities.map(e => e.id));
+
+    // Filter entities: visible from spatial index + selected entities (always render)
+    const entitiesToRender = entities.filter(
+      (entity) => culledIds.has(entity.id) || selectedIds.includes(entity.id)
+    );
+
+    renderEntities(ctx, entitiesToRender, viewport, selectedIds, selectedColor);
 
     // 스냅 포인트 렌더링
     if (snapEnabled && snapResult) {
@@ -192,6 +278,9 @@ export function CadCanvasLayer({
     screenToWorld,
     selectionBox,
     gridSize,
+    spatialIndex,
+    getVisibleBounds,
+    selectedIds,
   ]);
 
   // 스냅 포인트 계산

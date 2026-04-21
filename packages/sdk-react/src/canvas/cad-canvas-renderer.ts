@@ -1,6 +1,7 @@
 export interface Point {
   x: number;
   y: number;
+  z?: number;
 }
 
 export interface Viewport {
@@ -61,6 +62,10 @@ export interface Entity {
   hatchRotation?: number;
   /** HATCH: 경계 버텍스 */
   boundaryVertices?: Point[][];
+  /** SPLINE: 매듭값 */
+  knots?: number[];
+  /** SPLINE: 차수 */
+  degree?: number;
   [key: string]: unknown;
 }
 
@@ -228,11 +233,13 @@ function renderText(
 ) {
   if (!entity.position) return;
 
-  const screenX = (entity.position.x - viewport.pan.x) * viewport.zoom + viewport.width / 2;
-  const screenY = (entity.position.y - viewport.pan.y) * viewport.zoom + viewport.height / 2;
+  const screenX =
+    (entity.position.x - viewport.pan.x) * viewport.zoom + viewport.width / 2;
+  const screenY =
+    (entity.position.y - viewport.pan.y) * viewport.zoom + viewport.height / 2;
 
   const height = (entity.height ?? 1) * viewport.zoom;
-  const text = entity.text as string || entity.value as string || "";
+  const text = (entity.text as string) || (entity.value as string) || "";
 
   ctx.font = `${height}px Arial`;
   ctx.fillStyle = entity.color ?? "#333333";
@@ -380,7 +387,9 @@ function renderSpline(
   setLinetypeRender(ctx, entity.linetype, ctx.lineWidth);
   ctx.beginPath();
 
-  const screenPoints = points.map((v: { x: number; y: number }) => worldToScreen(v, viewport));
+  const screenPoints = points.map((v: { x: number; y: number }) =>
+    worldToScreen(v, viewport),
+  );
 
   if (screenPoints.length < 3) {
     // Not enough points for a curve, draw as polyline
@@ -483,8 +492,14 @@ function drawDimensionArrow(
 
   ctx.beginPath();
   ctx.moveTo(x, y);
-  ctx.lineTo(x - size * cos - (size / 2) * sin, y - size * sin + (size / 2) * cos);
-  ctx.lineTo(x - size * cos + (size / 2) * sin, y - size * sin - (size / 2) * cos);
+  ctx.lineTo(
+    x - size * cos - (size / 2) * sin,
+    y - size * sin + (size / 2) * cos,
+  );
+  ctx.lineTo(
+    x - size * cos + (size / 2) * sin,
+    y - size * sin - (size / 2) * cos,
+  );
   ctx.closePath();
   ctx.fill();
 }
@@ -537,7 +552,10 @@ function renderHatch(
     const angleRad = (rotation * Math.PI) / 180;
 
     // Get bounding box
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
     for (const loop of vertices) {
       for (const p of loop) {
         const screen = worldToScreen(p, viewport);

@@ -24,7 +24,7 @@
       "passes": true,
       "acceptanceCriteria": [
         "group code 10(X), 20(Y), 30(Z) 좌표가 독립적으로 버퍼링됨",
-        "X가 2번 연속出現 시 첫 번째 값 덮어써지지만 마지막 vertex에 y=0 들어가지 않음",
+        "X가 2번 연속 나타날 때 첫 번째 값 덮어써지지만 마지막 vertex에 y=0 들어가지 않음",
         "100개 이상 vertex 가진 LWPOLYLINE도 정확히 파싱됨",
         "LWPOLYLINE round-trip 테스트에서 모든 vertex 좌표 ±1e-6 이내 일치"
       ],
@@ -41,8 +41,8 @@
       "acceptanceCriteria": [
         "MTEXT entity 파싱 시 text content, height, rotation, width 보존",
         "MTEXT export 시 group code 1(text), 3(multi-line), 40(height), 41(width), 50(rotation) 모두 출력",
-        "MTEXT round-trip 시 text 내용 完全一致",
-        "multi-line MTEXT (group code 3含む) 파싱됨"
+        "MTEXT round-trip 시 text 내용 정확히 일치",
+        "multi-line MTEXT (group code 3 포함) 파싱됨"
       ],
       "files": [
         "packages/core/src/documents/dxf-parser.ts",

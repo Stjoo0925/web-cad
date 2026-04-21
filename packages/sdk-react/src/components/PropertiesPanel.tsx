@@ -1,4 +1,6 @@
 import React, { useState, useCallback } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ChevronRight, SquareDashed } from "@hugeicons/core-free-icons";
 
 export interface EntityProperty {
   id: string;
@@ -172,7 +174,7 @@ export function PropertiesPanel({
     return (
       <div style={panelStyle}>
         <div style={HEADER_STYLE} onClick={onCollapse}>
-          <CollapseIcon collapsed={collapsed} />
+          <HugeiconsIcon icon={ChevronRight} size={12} />
         </div>
       </div>
     );
@@ -182,13 +184,13 @@ export function PropertiesPanel({
     <div style={panelStyle}>
       <div style={HEADER_STYLE} onClick={onCollapse}>
         <span style={TITLE_STYLE}>Properties</span>
-        <CollapseIcon collapsed={collapsed} />
+        <HugeiconsIcon icon={ChevronRight} size={12} style={{ transform: collapsed ? "none" : "rotate(180deg)" }} />
       </div>
 
       <div style={CONTENT_STYLE}>
         {!localEntity ? (
           <div style={EMPTY_STATE_STYLE}>
-            <EmptyIcon />
+            <HugeiconsIcon icon={SquareDashed} size={32} style={{ color: "#707070" }} />
             <span>No entity selected</span>
             <span style={{ fontSize: "10px" }}>
               Select an entity to view its properties
@@ -389,41 +391,3 @@ export function PropertiesPanel({
   );
 }
 
-function CollapseIcon({ collapsed }: { collapsed: boolean }) {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-      <path
-        d={collapsed ? "M8 2L4 6L8 10" : "M2 4L6 8L10 4"}
-        stroke="#b0b0b0"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function EmptyIcon() {
-  return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-      <rect
-        x="4"
-        y="4"
-        width="24"
-        height="24"
-        rx="2"
-        stroke="#555"
-        strokeWidth="1.5"
-        strokeDasharray="4 2"
-      />
-      <circle
-        cx="16"
-        cy="16"
-        r="6"
-        stroke="#555"
-        strokeWidth="1.5"
-        strokeDasharray="3 2"
-      />
-    </svg>
-  );
-}

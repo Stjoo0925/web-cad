@@ -1,4 +1,13 @@
 import React, { useState, useCallback, useMemo } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ChevronLeft,
+  Eye,
+  EyeOff,
+  Lock,
+  LockOpen,
+  Plus,
+} from "@hugeicons/core-free-icons";
 import {
   filterLayers,
   filterEntitiesByLayer,
@@ -319,7 +328,7 @@ export function LayerPanel({
     <div style={panelStyle}>
       <div style={HEADER_STYLE} onClick={onCollapse}>
         <span style={TITLE_STYLE}>{collapsed ? "" : "Layers"}</span>
-        <CollapseIcon collapsed={collapsed} />
+        <HugeiconsIcon icon={ChevronLeft} size={12} style={{ transform: collapsed ? "rotate(180deg)" : "none" }} />
       </div>
 
       {!collapsed && (
@@ -398,7 +407,7 @@ export function LayerPanel({
                   onClick={(e) => handleToggleVisibility(layer.id, e)}
                   title={layer.visible ? "Hide Layer" : "Show Layer"}
                 >
-                  <VisibilityIcon visible={layer.visible} />
+                  <HugeiconsIcon icon={layer.visible ? Eye : EyeOff} size={14} style={{ color: layer.visible ? "#22c55e" : "#ef4444" }} />
                 </button>
 
                 <button
@@ -406,7 +415,7 @@ export function LayerPanel({
                   onClick={(e) => handleToggleLock(layer.id, e)}
                   title={layer.locked ? "Unlock Layer" : "Lock Layer"}
                 >
-                  <LockIcon locked={layer.locked} />
+                  <HugeiconsIcon icon={layer.locked ? Lock : LockOpen} size={12} style={{ color: layer.locked ? "#f59e0b" : "#707070" }} />
                 </button>
 
                 <div
@@ -446,125 +455,11 @@ export function LayerPanel({
           </div>
 
           <div style={ADD_BTN_STYLE} onClick={handleAddLayer}>
-            <PlusIcon />
+            <HugeiconsIcon icon={Plus} size={12} />
             <span>Add Layer</span>
           </div>
         </>
       )}
     </div>
-  );
-}
-
-function CollapseIcon({ collapsed }: { collapsed: boolean }) {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-      <path
-        d={collapsed ? "M4 2L8 6L4 10" : "M2 4L6 8L10 4"}
-        stroke="#b0b0b0"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function VisibilityIcon({ visible }: { visible: boolean }) {
-  if (visible) {
-    return (
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path
-          d="M1 7C1 7 3 3 7 3C11 3 13 7 13 7C13 7 11 11 7 11C3 11 1 7 1 7Z"
-          stroke="#22c55e"
-          strokeWidth="1.2"
-          fill="none"
-        />
-        <circle
-          cx="7"
-          cy="7"
-          r="2"
-          stroke="#22c55e"
-          strokeWidth="1.2"
-          fill="none"
-        />
-      </svg>
-    );
-  }
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <path
-        d="M1 7C1 7 3 3 7 3C11 3 13 7 13 7C13 7 11 11 7 11C3 11 1 7 1 7Z"
-        stroke="#ef4444"
-        strokeWidth="1.2"
-        fill="none"
-      />
-      <line x1="2" y1="12" x2="12" y2="2" stroke="#ef4444" strokeWidth="1.2" />
-    </svg>
-  );
-}
-
-function LockIcon({ locked }: { locked: boolean }) {
-  if (locked) {
-    return (
-      <svg width="12" height="14" viewBox="0 0 12 14" fill="none">
-        <rect
-          x="2"
-          y="6"
-          width="8"
-          height="7"
-          rx="1"
-          stroke="#f59e0b"
-          strokeWidth="1.2"
-          fill="none"
-        />
-        <path
-          d="M4 6V4C4 2.89543 4.89543 2 6 2V2C7.10457 2 8 2.89543 8 4V6"
-          stroke="#f59e0b"
-          strokeWidth="1.2"
-        />
-      </svg>
-    );
-  }
-  return (
-    <svg width="12" height="14" viewBox="0 0 12 14" fill="none">
-      <rect
-        x="2"
-        y="6"
-        width="8"
-        height="7"
-        rx="1"
-        stroke="#707070"
-        strokeWidth="1.2"
-        fill="none"
-      />
-      <path
-        d="M4 6V4C4 2.89543 4.89543 2 6 2V2C7.10457 2 8 2.89543 8 4"
-        stroke="#707070"
-        strokeWidth="1.2"
-      />
-    </svg>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-      <line
-        x1="6"
-        y1="1"
-        x2="6"
-        y2="11"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <line
-        x1="1"
-        y1="6"
-        x2="11"
-        y2="6"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-    </svg>
   );
 }

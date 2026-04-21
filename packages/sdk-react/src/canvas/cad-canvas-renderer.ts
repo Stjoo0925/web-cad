@@ -18,6 +18,8 @@ export interface Entity {
   start?: Point;
   end?: Point;
   vertices?: Point[];
+  /** SPLINE: 제어점 */
+  controlVertices?: Point[];
   center?: Point;
   radius?: number;
   startAngle?: number;
@@ -51,6 +53,14 @@ export interface Entity {
   alignment?: string;
   /** MTEXT: 회전각 */
   rotationAngle?: number;
+  /** HATCH: 패턴 */
+  hatchPattern?: string;
+  /** HATCH: 스케일 */
+  hatchScale?: number;
+  /** HATCH: 회전 */
+  hatchRotation?: number;
+  /** HATCH: 경계 버텍스 */
+  boundaryVertices?: Point[][];
   [key: string]: unknown;
 }
 
@@ -184,6 +194,10 @@ export function renderEntity(
       return renderEllipse(ctx, entity, viewport);
     case "SPLINE":
       return renderSpline(ctx, entity, viewport);
+    case "DIMENSION":
+      return renderDimension(ctx, entity, viewport);
+    case "HATCH":
+      return renderHatch(ctx, entity, viewport);
     default:
       return;
   }
@@ -357,43 +371,202 @@ function renderSpline(
   entity: Entity,
   viewport: Viewport,
 ) {
-  if (!entity.vertices || entity.vertices.length < 2) return;
+  // Support both controlVertices (new) and vertices (legacy)
+  const points = entity.controlVertices ?? entity.vertices;
+  if (!points || points.length < 2) return;
 
   ctx.strokeStyle = entity.color ?? "#333333";
   ctx.lineWidth = (entity.lineWidth ?? 1) * viewport.zoom;
   setLinetypeRender(ctx, entity.linetype, ctx.lineWidth);
   ctx.beginPath();
 
-  const points = entity.vertices.map((v) => worldToScreen(v, viewport));
+  const screenPoints = points.map((v: { x: number; y: number }) => worldToScreen(v, viewport));
 
-  if (points.length < 3) {
+  if (screenPoints.length < 3) {
     // Not enough points for a curve, draw as polyline
-    ctx.moveTo(points[0].x, points[0].y);
-    for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].x, points[i].y);
+    ctx.moveTo(screenPoints[0].x, screenPoints[0].y);
+    for (let i = 1; i < screenPoints.length; i++) {
+      ctx.lineTo(screenPoints[i].x, screenPoints[i].y);
     }
   } else {
-    // Draw as smooth curve through points using quadratic bezier
-    ctx.moveTo(points[0].x, points[0].y);
+    // Draw as smooth curve through points using Catmull-Rom spline
+    ctx.moveTo(screenPoints[0].x, screenPoints[0].y);
 
-    for (let i = 1; i < points.length - 1; i++) {
-      const xc = (points[i].x + points[i + 1].x) / 2;
-      const yc = (points[i].y + points[i + 1].y) / 2;
-      ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+    for (let i = 1; i < screenPoints.length - 1; i++) {
+      const xc = (screenPoints[i].x + screenPoints[i + 1].x) / 2;
+      const yc = (screenPoints[i].y + screenPoints[i + 1].y) / 2;
+      ctx.quadraticCurveTo(screenPoints[i].x, screenPoints[i].y, xc, yc);
     }
 
     // Curve to the last point
-    const last = points[points.length - 1];
+    const last = screenPoints[screenPoints.length - 1];
     ctx.quadraticCurveTo(
-      points[points.length - 2].x,
-      points[points.length - 2].y,
+      screenPoints[screenPoints.length - 2].x,
+      screenPoints[screenPoints.length - 2].y,
       last.x,
       last.y,
     );
   }
 
+  // Draw control polygon if closed
+  if (entity.closed && screenPoints.length > 2) {
+    ctx.moveTo(screenPoints[0].x, screenPoints[0].y);
+    for (let i = 1; i < screenPoints.length; i++) {
+      ctx.lineTo(screenPoints[i].x, screenPoints[i].y);
+    }
+    ctx.closePath();
+  }
+
   ctx.stroke();
   ctx.setLineDash([]);
+}
+
+/**
+ * DIMENSION 엔티티 렌더링
+ */
+function renderDimension(
+  ctx: CanvasRenderingContext2D,
+  entity: Entity,
+  viewport: Viewport,
+) {
+  if (!entity.start || !entity.end || !entity.position) return;
+
+  const start = worldToScreen(entity.start, viewport);
+  const end = worldToScreen(entity.end, viewport);
+  const pos = worldToScreen(entity.position, viewport);
+
+  ctx.strokeStyle = entity.color ?? "#333333";
+  ctx.fillStyle = entity.color ?? "#333333";
+  ctx.lineWidth = 1;
+
+  const arrowSize = 6 * viewport.zoom;
+
+  // Draw extension lines (perpendicular from dimension line)
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(start.x, start.y);
+  ctx.lineTo(pos.x, pos.y);
+  ctx.moveTo(end.x, end.y);
+  ctx.lineTo(pos.x, pos.y);
+  ctx.stroke();
+
+  // Draw dimension line
+  ctx.beginPath();
+  ctx.moveTo(start.x, pos.y);
+  ctx.lineTo(end.x, pos.y);
+  ctx.stroke();
+
+  // Draw arrows at endpoints
+  const angle1 = Math.atan2(pos.y - start.y, end.x - start.x);
+  drawDimensionArrow(ctx, start.x, pos.y, angle1, arrowSize);
+  const angle2 = Math.atan2(pos.y - end.y, start.x - end.x);
+  drawDimensionArrow(ctx, end.x, pos.y, angle2, arrowSize);
+
+  // Draw text
+  const distance = Math.hypot(end.x - start.x, end.y - start.y);
+  const text = distance.toFixed(2);
+  ctx.font = `${12 * viewport.zoom}px Arial`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, pos.x, pos.y - 8 * viewport.zoom);
+}
+
+function drawDimensionArrow(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  angle: number,
+  size: number,
+) {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x - size * cos - (size / 2) * sin, y - size * sin + (size / 2) * cos);
+  ctx.lineTo(x - size * cos + (size / 2) * sin, y - size * sin - (size / 2) * cos);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/**
+ * HATCH 엔티티 렌더링
+ */
+function renderHatch(
+  ctx: CanvasRenderingContext2D,
+  entity: Entity,
+  viewport: Viewport,
+) {
+  const vertices = entity.boundaryVertices;
+  if (!vertices || vertices.length === 0) return;
+
+  ctx.save();
+
+  // Build path for clipping
+  ctx.beginPath();
+  for (let i = 0; i < vertices.length; i++) {
+    const loop = vertices[i];
+    if (loop.length < 3) continue;
+
+    const first = worldToScreen(loop[0], viewport);
+    ctx.moveTo(first.x, first.y);
+
+    for (let j = 1; j < loop.length; j++) {
+      const pt = worldToScreen(loop[j], viewport);
+      ctx.lineTo(pt.x, pt.y);
+    }
+    ctx.closePath();
+  }
+  ctx.clip();
+
+  // Hatch pattern
+  const pattern = entity.hatchPattern ?? "solid";
+  const scale = entity.hatchScale ?? 1;
+  const rotation = entity.hatchRotation ?? 0;
+
+  if (pattern === "solid") {
+    ctx.fillStyle = entity.color ?? "#808080";
+    ctx.fill();
+  } else {
+    // Pattern lines
+    ctx.strokeStyle = entity.color ?? "#808080";
+    ctx.lineWidth = 0.5;
+    ctx.setLineDash([]);
+
+    const spacing = 8 * scale * viewport.zoom;
+    const angleRad = (rotation * Math.PI) / 180;
+
+    // Get bounding box
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const loop of vertices) {
+      for (const p of loop) {
+        const screen = worldToScreen(p, viewport);
+        minX = Math.min(minX, screen.x);
+        minY = Math.min(minY, screen.y);
+        maxX = Math.max(maxX, screen.x);
+        maxY = Math.max(maxY, screen.y);
+      }
+    }
+
+    ctx.save();
+    ctx.translate((minX + maxX) / 2, (minY + maxY) / 2);
+    ctx.rotate(angleRad);
+    ctx.translate(-(minX + maxX) / 2, -(minY + maxY) / 2);
+
+    const diagonal = Math.hypot(maxX - minX, maxY - minY);
+
+    // Draw diagonal hatch lines
+    for (let d = -diagonal; d < diagonal * 2; d += spacing) {
+      ctx.beginPath();
+      ctx.moveTo(minX + d - diagonal, minY - diagonal);
+      ctx.lineTo(minX + d + diagonal, minY + diagonal);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  ctx.restore();
 }
 
 function renderBlock(

@@ -20,7 +20,11 @@ import { createOffsetTool } from "./tools/offset-tool.js";
 import { createTrimTool } from "./tools/trim-tool.js";
 import { createExtendTool } from "./tools/extend-tool.js";
 import { createScaleTool } from "./tools/scale-tool.js";
-import { hitTestEntities, hitTestRect } from "./tools/select-tool.js";
+import {
+  hitTestEntities,
+  hitTestRectCrossing,
+  hitTestRectWindow,
+} from "./tools/select-tool.js";
 import { LayersPanel } from "./panels/LayersPanel.js";
 import { PropertiesPanel } from "./panels/PropertiesPanel.js";
 
@@ -716,7 +720,7 @@ export function CadPointCloudEditor({
 
       // Redo (Ctrl+Y or Ctrl+Shift+Z)
       if ((e.key === "y" && (e.ctrlKey || e.metaKey)) ||
-          (e.key === "z" && (e.ctrlKey || e.metaKey) && e.shiftKey)) {
+        (e.key === "z" && (e.ctrlKey || e.metaKey) && e.shiftKey)) {
         e.preventDefault();
         const nextEntities = historyRef.current.redo(entities);
         if (nextEntities) {
@@ -1161,7 +1165,11 @@ export function CadPointCloudEditor({
 
   // Handle selection box drag to select multiple entities
   const handleSelectionBoxEnd = useCallback(
-    (worldStart: Point, worldEnd: Point, modifiers?: { shift?: boolean }) => {
+    (
+      worldStart: Point,
+      worldEnd: Point,
+      modifiers?: { shift?: boolean; mode?: "window" | "crossing" },
+    ) => {
       const rect = {
         minX: Math.min(worldStart.x, worldEnd.x),
         minY: Math.min(worldStart.y, worldEnd.y),
@@ -1170,7 +1178,11 @@ export function CadPointCloudEditor({
       };
 
       // Find all entities within the rect
-      const hitEntities = hitTestRect(visibleEntities, rect);
+      const mode = modifiers?.mode ?? "window";
+      const hitEntities =
+        mode === "crossing"
+          ? hitTestRectCrossing(visibleEntities, rect)
+          : hitTestRectWindow(visibleEntities, rect);
 
       if (hitEntities.length > 0) {
         const hitIds = hitEntities

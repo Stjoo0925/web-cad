@@ -6,11 +6,7 @@
  * 단일/다중 선택, 선택 해제, 히트 테스트 기능을 제공합니다.
  */
 
-import type {
-  Entity,
-  Point,
-  Viewport,
-} from "../canvas/cad-canvas-renderer";
+import type { Entity, Point, Viewport } from "../canvas/cad-canvas-renderer";
 
 /**
  * 히트 허용 오차 (픽셀)
@@ -237,10 +233,14 @@ export function hitTestRect(
         if (entity.start && entity.end) {
           // Check if any point of the line is inside the rect
           return (
-            (entity.start.x >= rect.minX && entity.start.x <= rect.maxX &&
-              entity.start.y >= rect.minY && entity.start.y <= rect.maxY) ||
-            (entity.end.x >= rect.minX && entity.end.x <= rect.maxX &&
-              entity.end.y >= rect.minY && entity.end.y <= rect.maxY)
+            (entity.start.x >= rect.minX &&
+              entity.start.x <= rect.maxX &&
+              entity.start.y >= rect.minY &&
+              entity.start.y <= rect.maxY) ||
+            (entity.end.x >= rect.minX &&
+              entity.end.x <= rect.maxX &&
+              entity.end.y >= rect.minY &&
+              entity.end.y <= rect.maxY)
           );
         }
         return false;
@@ -271,6 +271,113 @@ export function hitTestRect(
       default:
         return false;
     }
+  });
+}
+
+function isPointInsideRect(
+  p: Point,
+  rect: { minX: number; minY: number; maxX: number; maxY: number },
+): boolean {
+  return (
+    p.x >= rect.minX && p.x <= rect.maxX && p.y >= rect.minY && p.y <= rect.maxY
+  );
+}
+
+function getEntityAabb(entity: Entity): {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+} | null {
+  const pts: Point[] = [];
+  if (entity.position) pts.push(entity.position);
+  if (entity.start) pts.push(entity.start);
+  if (entity.end) pts.push(entity.end);
+  if (entity.center) pts.push(entity.center);
+  if (entity.vertices) pts.push(...entity.vertices);
+  if (entity.blockPosition) pts.push(entity.blockPosition);
+
+  if (pts.length === 0) return null;
+  let minX = pts[0].x;
+  let minY = pts[0].y;
+  let maxX = pts[0].x;
+  let maxY = pts[0].y;
+  for (let i = 1; i < pts.length; i++) {
+    const p = pts[i];
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
+  }
+  return { minX, minY, maxX, maxY };
+}
+
+function rectContainsRect(
+  outer: { minX: number; minY: number; maxX: number; maxY: number },
+  inner: { minX: number; minY: number; maxX: number; maxY: number },
+): boolean {
+  return (
+    inner.minX >= outer.minX &&
+    inner.maxX <= outer.maxX &&
+    inner.minY >= outer.minY &&
+    inner.maxY <= outer.maxY
+  );
+}
+
+function rectIntersectsRect(
+  a: { minX: number; minY: number; maxX: number; maxY: number },
+  b: { minX: number; minY: number; maxX: number; maxY: number },
+): boolean {
+  return !(
+    a.maxX < b.minX ||
+    a.minX > b.maxX ||
+    a.maxY < b.minY ||
+    a.minY > b.maxY
+  );
+}
+
+/**
+ * AutoCAD-style Window selection: entity must be fully contained in the rectangle.
+ * (Implementation uses entity AABB containment for speed/stability.)
+ */
+export function hitTestRectWindow(
+  entities: Entity[],
+  rect: { minX: number; minY: number; maxX: number; maxY: number },
+): Entity[] {
+  return entities.filter((entity) => {
+    // Exact containment for point-like entities
+    if (entity.type === "POINT" && entity.position) {
+      return isPointInsideRect(entity.position, rect);
+    }
+
+    const aabb = getEntityAabb(entity);
+    if (!aabb) return false;
+    return rectContainsRect(rect, aabb);
+  });
+}
+
+/**
+ * AutoCAD-style Crossing selection: entity is selected if it intersects the rectangle.
+ * (Implementation uses AABB intersection + quick point checks.)
+ */
+export function hitTestRectCrossing(
+  entities: Entity[],
+  rect: { minX: number; minY: number; maxX: number; maxY: number },
+): Entity[] {
+  return entities.filter((entity) => {
+    // Fast path: any defining point inside rect
+    if (entity.position && isPointInsideRect(entity.position, rect))
+      return true;
+    if (entity.start && isPointInsideRect(entity.start, rect)) return true;
+    if (entity.end && isPointInsideRect(entity.end, rect)) return true;
+    if (entity.center && isPointInsideRect(entity.center, rect)) return true;
+    if (entity.blockPosition && isPointInsideRect(entity.blockPosition, rect))
+      return true;
+    if (entity.vertices?.some((v) => isPointInsideRect(v, rect))) return true;
+
+    const aabb = getEntityAabb(entity);
+    if (!aabb) return false;
+    return rectIntersectsRect(rect, aabb);
   });
 }
 

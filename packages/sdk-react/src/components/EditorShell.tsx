@@ -19,6 +19,7 @@ import { createTextTool, type TextEntity } from "../tools/text-tool.js";
 import { createMoveCommand } from "../commands/move-command.js";
 import { createRotateCommand } from "../commands/rotate-command.js";
 import { createScaleCommand } from "../commands/scale-command.js";
+import { ThemeProvider } from "./ThemeProvider.js";
 
 interface EditorShellProps {
   initialEntities?: Entity[];
@@ -413,84 +414,86 @@ export function EditorShell({
 
   const selectedProperty: EntityProperty | null = selectedEntity
     ? {
-        id: selectedEntity.id!,
-        type: selectedEntity.type,
-        layer:
-          ((selectedEntity as Record<string, unknown>).layer as string) || "0",
-        color:
-          ((selectedEntity as Record<string, unknown>).color as string) ||
-          "BYLAYER",
-        start: selectedEntity.start,
-        end: selectedEntity.end,
-        center: selectedEntity.center,
-        radius: selectedEntity.radius,
-        vertices: selectedEntity.vertices,
-        position: selectedEntity.position,
-      }
+      id: selectedEntity.id!,
+      type: selectedEntity.type,
+      layer:
+        ((selectedEntity as Record<string, unknown>).layer as string) || "0",
+      color:
+        ((selectedEntity as Record<string, unknown>).color as string) ||
+        "BYLAYER",
+      start: selectedEntity.start,
+      end: selectedEntity.end,
+      center: selectedEntity.center,
+      radius: selectedEntity.radius,
+      vertices: selectedEntity.vertices,
+      position: selectedEntity.position,
+    }
     : null;
 
   return (
-    <div style={SHELL_STYLE}>
-      <RibbonToolbar
-        activeTab={activeTab}
-        activeTool={activeTool}
-        onToolSelect={handleToolSelect}
-        onTabChange={setActiveTab}
-        onToggleSnap={() => setSnapEnabled((prev) => !prev)}
-        onToggleGrid={() => setGridEnabled((prev) => !prev)}
-        onToggleOrtho={() => setOrthoEnabled((prev) => !prev)}
-        snapEnabled={snapEnabled}
-        gridEnabled={gridEnabled}
-        orthoEnabled={orthoEnabled}
-      />
-
-      <div style={MAIN_STYLE}>
-        <LayerPanel
-          layers={layers}
-          activeLayer={activeLayer}
-          onLayerSelect={setActiveLayer}
-          onLayerToggleVisibility={(id) => {
-            setLayers((prev) =>
-              prev.map((l) =>
-                l.id === id ? { ...l, visible: !l.visible } : l,
-              ),
-            );
-          }}
-          onLayerToggleLock={(id) => {
-            setLayers((prev) =>
-              prev.map((l) => (l.id === id ? { ...l, locked: !l.locked } : l)),
-            );
-          }}
-          collapsed={leftPanelCollapsed}
-          onCollapse={() => setLeftPanelCollapsed((prev) => !prev)}
+    <ThemeProvider defaultTheme="dark">
+      <div style={SHELL_STYLE}>
+        <RibbonToolbar
+          activeTab={activeTab}
+          activeTool={activeTool}
+          onToolSelect={handleToolSelect}
+          onTabChange={setActiveTab}
+          onToggleSnap={() => setSnapEnabled((prev) => !prev)}
+          onToggleGrid={() => setGridEnabled((prev) => !prev)}
+          onToggleOrtho={() => setOrthoEnabled((prev) => !prev)}
+          snapEnabled={snapEnabled}
+          gridEnabled={gridEnabled}
+          orthoEnabled={orthoEnabled}
         />
 
-        <div data-cad-viewport-surface style={VIEWPORT_STYLE}>
-          <CadCanvasLayer
-            entities={entities}
-            viewport={viewport}
-            onViewportChange={handleViewportChange}
+        <div style={MAIN_STYLE}>
+          <LayerPanel
+            layers={layers}
+            activeLayer={activeLayer}
+            onLayerSelect={setActiveLayer}
+            onLayerToggleVisibility={(id) => {
+              setLayers((prev) =>
+                prev.map((l) =>
+                  l.id === id ? { ...l, visible: !l.visible } : l,
+                ),
+              );
+            }}
+            onLayerToggleLock={(id) => {
+              setLayers((prev) =>
+                prev.map((l) => (l.id === id ? { ...l, locked: !l.locked } : l)),
+              );
+            }}
+            collapsed={leftPanelCollapsed}
+            onCollapse={() => setLeftPanelCollapsed((prev) => !prev)}
           />
+
+          <div data-cad-viewport-surface style={VIEWPORT_STYLE}>
+            <CadCanvasLayer
+              entities={entities}
+              viewport={viewport}
+              onViewportChange={handleViewportChange}
+            />
+          </div>
+
+          <div style={SIDE_PANELS_STYLE}>
+            <PropertiesPanel
+              selectedEntity={selectedProperty}
+              collapsed={rightPanelCollapsed}
+              onCollapse={() => setRightPanelCollapsed((prev) => !prev)}
+            />
+          </div>
         </div>
 
-        <div style={SIDE_PANELS_STYLE}>
-          <PropertiesPanel
-            selectedEntity={selectedProperty}
-            collapsed={rightPanelCollapsed}
-            onCollapse={() => setRightPanelCollapsed((prev) => !prev)}
-          />
-        </div>
+        <CommandLine onCommand={handleCommand} history={commandHistory} />
+
+        <StatusBar
+          coordinates={mouseCoords}
+          zoom={viewport.zoom}
+          snapMode={snapEnabled}
+          orthoMode={orthoEnabled}
+          gridVisible={gridEnabled}
+        />
       </div>
-
-      <CommandLine onCommand={handleCommand} history={commandHistory} />
-
-      <StatusBar
-        coordinates={mouseCoords}
-        zoom={viewport.zoom}
-        snapMode={snapEnabled}
-        orthoMode={orthoEnabled}
-        gridVisible={gridEnabled}
-      />
-    </div>
+    </ThemeProvider>
   );
 }

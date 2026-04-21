@@ -113,14 +113,14 @@ export class TextStyleManager {
   }
 
   /**
-   * 스타일获取
+   * 스타일 조회
    */
   getStyle(id: string): TextStyle | undefined {
     return this.styles.get(id);
   }
 
   /**
-   * 현재 스타일 获取
+   * 현재 스타일 조회
    */
   getCurrentStyle(): TextStyle {
     return this.styles.get(this.currentStyleId) ?? DEFAULT_TEXT_STYLES[0];
@@ -138,7 +138,7 @@ export class TextStyleManager {
   }
 
   /**
-   * 스타일 목록 获取
+   * 스타일 목록 조회
    */
   getAllStyles(): TextStyle[] {
     return Array.from(this.styles.values());
@@ -271,7 +271,7 @@ export function renderStyledText(
 }
 
 /**
- * 텍스트 경계框 계산
+ * 텍스트 경계 계산
  */
 export function measureStyledText(
   ctx: CanvasRenderingContext2D,

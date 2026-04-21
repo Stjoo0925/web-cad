@@ -1,3 +1,62 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 다크 테마 색상 팔레트 */
+@theme {
+  --color-cad-bg-dark: #1e1e1e;
+  --color-cad-bg-dark-secondary: #2d2d2d;
+  --color-cad-bg-dark-tertiary: #3d3d3d;
+  --color-cad-border-dark: #4d4d4d;
+  --color-cad-text-dark: #ffffff;
+  --color-cad-text-dim-dark: #888888;
+  --color-cad-accent-dark: #0e639c;
+  --color-cad-accent-hover-dark: #1e8ece;
+  --color-cad-button-bg-dark: #4d4d4d;
+  --color-cad-button-hover-dark: #5d5d5d;
+
+  /* 라이트 테마 색상 팔레트 */
+  --color-cad-bg-light: #ffffff;
+  --color-cad-bg-secondary-light: #f5f5f5;
+  --color-cad-bg-tertiary-light: #e5e5e5;
+  --color-cad-border-light: #d4d4d4;
+  --color-cad-text-light: #1a1a1a;
+  --color-cad-text-dim-light: #666666;
+  --color-cad-accent-light: #0066cc;
+  --color-cad-accent-hover-light: #0077ee;
+  --color-cad-button-bg-light: #e0e0e0;
+  --color-cad-button-hover-light: #d0d0d0;
+}
+
+/* 다크 테마 기본 스타일 */
+.dark {
+  --color-cad-bg: var(--color-cad-bg-dark);
+  --color-cad-bg-secondary: var(--color-cad-bg-dark-secondary);
+  --color-cad-bg-tertiary: var(--color-cad-bg-dark-tertiary);
+  --color-cad-border: var(--color-cad-border-dark);
+  --color-cad-text: var(--color-cad-text-dark);
+  --color-cad-text-dim: var(--color-cad-text-dim-dark);
+  --color-cad-accent: var(--color-cad-accent-dark);
+  --color-cad-accent-hover: var(--color-cad-accent-hover-dark);
+  --color-cad-button-bg: var(--color-cad-button-bg-dark);
+  --color-cad-button-hover: var(--color-cad-button-hover-dark);
+}
+
+/* 라이트 테마 기본 스타일 */
+.light {
+  --color-cad-bg: var(--color-cad-bg-light);
+  --color-cad-bg-secondary: var(--color-cad-bg-secondary-light);
+  --color-cad-bg-tertiary: var(--color-cad-bg-tertiary-light);
+  --color-cad-border: var(--color-cad-border-light);
+  --color-cad-text: var(--color-cad-text-light);
+  --color-cad-text-dim: var(--color-cad-text-dim-light);
+  --color-cad-accent: var(--color-cad-accent-light);
+  --color-cad-accent-hover: var(--color-cad-accent-hover-light);
+  --color-cad-button-bg: var(--color-cad-button-bg-light);
+  --color-cad-button-hover: var(--color-cad-button-hover-light);
+}
+
+/* 기본적으로 다크 테마 적용 */
+html {
+  @apply dark;
+}

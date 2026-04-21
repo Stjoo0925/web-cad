@@ -1,4 +1,22 @@
 import React, { useState, useCallback } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Cursor,
+  Pen,
+  Circle,
+  Type,
+  Move,
+  Scale,
+  Ruler,
+  Magnet,
+  Grid,
+  Square,
+  Sun,
+  Moon,
+  RefreshCw,
+  Target,
+} from "@hugeicons/core-free-icons";
+import { useTheme } from "./ThemeProvider";
 
 export type ToolType =
   | "select"
@@ -28,7 +46,7 @@ export interface RibbonPanel {
 export interface RibbonTool {
   id: ToolType;
   label: string;
-  icon: React.ReactNode;
+  iconName: string;
   shortcut?: string;
 }
 
@@ -45,155 +63,24 @@ interface RibbonToolbarProps {
   orthoEnabled?: boolean;
 }
 
-const RIBBON_STYLE: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  background: "#2d2d2d",
-  borderBottom: "1px solid #4d4d4d",
-  flexShrink: 0,
-};
-
-const TAB_BAR_STYLE: React.CSSProperties = {
-  display: "flex",
-  background: "#2d2d2d",
-  borderBottom: "1px solid #4d4d4d",
-  padding: "0 4px",
-};
-
-const TAB_STYLE: React.CSSProperties = {
-  padding: "8px 16px",
-  color: "#b0b0b0",
-  fontSize: "12px",
-  fontWeight: 500,
-  cursor: "pointer",
-  borderBottom: "2px solid transparent",
-  transition: "all 0.15s ease",
-  userSelect: "none",
-};
-
-const TAB_ACTIVE: React.CSSProperties = {
-  ...TAB_STYLE,
-  color: "#ffffff",
-  borderBottomColor: "#0e639c",
-};
-
-const PANEL_CONTAINER_STYLE: React.CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "4px",
-  padding: "8px 12px",
-  background: "#3d3d3d",
-  borderBottom: "1px solid #4d4d4d",
-};
-
-const PANEL_STYLE: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "2px",
-  padding: "4px 8px",
-  background: "#353535",
-  borderRadius: "4px",
-  minWidth: "80px",
-};
-
-const PANEL_TITLE_STYLE: React.CSSProperties = {
-  color: "#888888",
-  fontSize: "9px",
-  textTransform: "uppercase",
-  letterSpacing: "0.5px",
-  marginBottom: "4px",
-  textAlign: "center",
-};
-
-const TOOL_GRID_STYLE: React.CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "2px",
-  justifyContent: "center",
-};
-
-const TOOL_BTN_STYLE: React.CSSProperties = {
-  width: "32px",
-  height: "32px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "transparent",
-  border: "1px solid transparent",
-  borderRadius: "3px",
-  cursor: "pointer",
-  transition: "all 0.1s ease",
-};
-
-const TOOL_BTN_HOVER: React.CSSProperties = {
-  ...TOOL_BTN_STYLE,
-  background: "#4d4d4d",
-};
-
-const TOOL_BTN_ACTIVE: React.CSSProperties = {
-  ...TOOL_BTN_STYLE,
-  background: "#0e639c",
-  borderColor: "#1e8ece",
-};
-
-const TOOLBTN_TOOLTIP: React.CSSProperties = {
-  position: "absolute" as const,
-  bottom: "100%",
-  left: "50%",
-  transform: "translateX(-50%)",
-  background: "#1e1e1e",
-  color: "#ffffff",
-  padding: "4px 8px",
-  borderRadius: "3px",
-  fontSize: "10px",
-  whiteSpace: "nowrap",
-  pointerEvents: "none" as const,
-  zIndex: 1000,
-  marginBottom: "4px",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-};
-
-const TOGGLE_BTN_STYLE: React.CSSProperties = {
-  ...TOOL_BTN_STYLE,
-  width: "28px",
-  height: "28px",
-};
-
-const TOOLBAR_DIVIDER: React.CSSProperties = {
-  width: "1px",
-  background: "#4d4d4d",
-  margin: "0 8px",
-  alignSelf: "stretch",
-};
-
-const MODE_BAR_STYLE: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "4px",
-  padding: "4px 12px",
-  background: "#2d2d2d",
-  borderBottom: "1px solid #353535",
-};
-
-const MODE_BTN_STYLE: React.CSSProperties = {
-  padding: "4px 12px",
-  fontSize: "11px",
-  borderRadius: "3px",
-  border: "1px solid #4d4d4d",
-  background: "#3d3d3d",
-  color: "#b0b0b0",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  gap: "4px",
-  transition: "all 0.1s ease",
-};
-
-const MODE_BTN_ACTIVE: React.CSSProperties = {
-  ...MODE_BTN_STYLE,
-  background: "#0e639c",
-  borderColor: "#1e8ece",
-  color: "#ffffff",
+/**
+ * 아이콘 매핑 테이블
+ */
+const ICON_MAP: Record<string, any> = {
+  select: Cursor,
+  line: Pen,
+  polyline: Pen,
+  circle: Circle,
+  arc: Circle,
+  text: Type,
+  point: Target,
+  move: Move,
+  rotate: RefreshCw,
+  scale: Scale,
+  dimension: Ruler,
+  snap: Magnet,
+  grid: Grid,
+  ortho: Square,
 };
 
 const HOME_TAB: RibbonTab = {
@@ -207,7 +94,7 @@ const HOME_TAB: RibbonTab = {
         {
           id: "select",
           label: "Select",
-          icon: <SelectIcon />,
+          iconName: "select",
           shortcut: "ESC",
         },
       ],
@@ -216,26 +103,26 @@ const HOME_TAB: RibbonTab = {
       id: "draw",
       title: "Draw",
       tools: [
-        { id: "line", label: "Line", icon: <LineIcon />, shortcut: "L" },
+        { id: "line", label: "Line", iconName: "line", shortcut: "L" },
         {
           id: "polyline",
           label: "Polyline",
-          icon: <PolylineIcon />,
+          iconName: "polyline",
           shortcut: "PL",
         },
-        { id: "circle", label: "Circle", icon: <CircleIcon />, shortcut: "C" },
-        { id: "arc", label: "Arc", icon: <ArcIcon />, shortcut: "A" },
-        { id: "text", label: "Text", icon: <TextIcon />, shortcut: "DT" },
-        { id: "point", label: "Point", icon: <PointIcon />, shortcut: "PO" },
+        { id: "circle", label: "Circle", iconName: "circle", shortcut: "C" },
+        { id: "arc", label: "Arc", iconName: "arc", shortcut: "A" },
+        { id: "text", label: "Text", iconName: "text", shortcut: "DT" },
+        { id: "point", label: "Point", iconName: "point", shortcut: "PO" },
       ],
     },
     {
       id: "modify",
       title: "Modify",
       tools: [
-        { id: "move", label: "Move", icon: <MoveIcon />, shortcut: "M" },
-        { id: "rotate", label: "Rotate", icon: <RotateIcon />, shortcut: "RO" },
-        { id: "scale", label: "Scale", icon: <ScaleIcon />, shortcut: "SC" },
+        { id: "move", label: "Move", iconName: "move", shortcut: "M" },
+        { id: "rotate", label: "Rotate", iconName: "rotate", shortcut: "RO" },
+        { id: "scale", label: "Scale", iconName: "scale", shortcut: "SC" },
       ],
     },
   ],
@@ -249,7 +136,7 @@ const ANNOTATE_TAB: RibbonTab = {
       id: "text",
       title: "Text",
       tools: [
-        { id: "text", label: "Text", icon: <TextIcon />, shortcut: "DT" },
+        { id: "text", label: "Text", iconName: "text", shortcut: "DT" },
       ],
     },
     {
@@ -259,7 +146,7 @@ const ANNOTATE_TAB: RibbonTab = {
         {
           id: "dimension",
           label: "Dimension",
-          icon: <DimensionIcon />,
+          iconName: "dimension",
           shortcut: "D",
         },
       ],
@@ -267,6 +154,10 @@ const ANNOTATE_TAB: RibbonTab = {
   ],
 };
 
+/**
+ * 리본 툴바 컴포넌트
+ * 현대적인 CAD 스타일의 툴바를 제공합니다.
+ */
 export function RibbonToolbar({
   activeTab = "home",
   activeTool = "select",
@@ -280,6 +171,7 @@ export function RibbonToolbar({
   orthoEnabled = false,
 }: RibbonToolbarProps) {
   const [hoveredTool, setHoveredTool] = useState<string | null>(null);
+  const { theme, toggleTheme } = useTheme();
   const tabs = [HOME_TAB, ANNOTATE_TAB];
 
   const currentTab = tabs.find((t) => t.id === activeTab) || HOME_TAB;
@@ -292,86 +184,113 @@ export function RibbonToolbar({
   );
 
   return (
-    <div style={RIBBON_STYLE}>
-      <div style={TAB_BAR_STYLE}>
+    <div className="flex flex-col bg-[var(--color-cad-bg-secondary)] border-b border-[var(--color-cad-border)] flex-shrink-0">
+      {/* 탭 바 */}
+      <div className="flex bg-[var(--color-cad-bg-secondary)] border-b border-[var(--color-cad-border)] px-1">
         {tabs.map((tab) => (
-          <div
+          <button
             key={tab.id}
-            style={tab.id === activeTab ? TAB_ACTIVE : TAB_STYLE}
+            className={`px-4 py-2 text-xs font-medium cursor-pointer border-b-2 transition-all duration-200 select-none ${tab.id === activeTab
+              ? "text-[var(--color-cad-text)] border-[var(--color-cad-accent)]"
+              : "text-[var(--color-cad-text-dim)] border-transparent hover:text-[var(--color-cad-text)]"
+              }`}
             onClick={() => onTabChange?.(tab.id)}
           >
             {tab.label}
-          </div>
+          </button>
         ))}
-        <div style={{ flex: 1 }} />
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-            padding: "0 8px",
-          }}
-        >
+        <div className="flex-1" />
+
+        {/* 모드 버튼 그룹 */}
+        <div className="flex items-center gap-1 px-2">
           <button
-            style={snapEnabled ? MODE_BTN_ACTIVE : MODE_BTN_STYLE}
+            className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md border transition-all duration-200 ${snapEnabled
+              ? "bg-[var(--color-cad-accent)] border-[var(--color-cad-accent-hover)] text-white"
+              : "bg-[var(--color-cad-bg-tertiary)] border-[var(--color-cad-border)] text-[var(--color-cad-text-dim)] hover:bg-[var(--color-cad-button-hover)]"
+              }`}
             onClick={onToggleSnap}
             title="Snap Mode"
           >
-            <SnapMiniIcon />
-            SNAP
+            <HugeiconsIcon icon={Magnet} size={16} />
+            <span>SNAP</span>
           </button>
           <button
-            style={gridEnabled ? MODE_BTN_ACTIVE : MODE_BTN_STYLE}
+            className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md border transition-all duration-200 ${gridEnabled
+              ? "bg-[var(--color-cad-accent)] border-[var(--color-cad-accent-hover)] text-white"
+              : "bg-[var(--color-cad-bg-tertiary)] border-[var(--color-cad-border)] text-[var(--color-cad-text-dim)] hover:bg-[var(--color-cad-button-hover)]"
+              }`}
             onClick={onToggleGrid}
             title="Grid Display"
           >
-            <GridMiniIcon />
-            GRID
+            <HugeiconsIcon icon={Grid} size={16} />
+            <span>GRID</span>
           </button>
           <button
-            style={orthoEnabled ? MODE_BTN_ACTIVE : MODE_BTN_STYLE}
+            className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md border transition-all duration-200 ${orthoEnabled
+              ? "bg-[var(--color-cad-accent)] border-[var(--color-cad-accent-hover)] text-white"
+              : "bg-[var(--color-cad-bg-tertiary)] border-[var(--color-cad-border)] text-[var(--color-cad-text-dim)] hover:bg-[var(--color-cad-button-hover)]"
+              }`}
             onClick={onToggleOrtho}
             title="Orthogonal Mode"
           >
-            <OrthoMiniIcon />
-            ORTHO
+            <HugeiconsIcon icon={Square} size={16} />
+            <span>ORTHO</span>
+          </button>
+
+          {/* 구분선 */}
+          <div className="w-px bg-[var(--color-cad-border)] mx-1" />
+
+          {/* 테마 토글 */}
+          <button
+            className="p-2 rounded-md bg-[var(--color-cad-bg-tertiary)] border border-[var(--color-cad-border)] text-[var(--color-cad-text-dim)] hover:bg-[var(--color-cad-button-hover)] transition-all duration-200"
+            onClick={toggleTheme}
+            title={theme === "dark" ? "라이트 테마" : "다크 테마"}
+          >
+            <HugeiconsIcon icon={theme === "dark" ? Sun : Moon} size={18} />
           </button>
         </div>
       </div>
 
-      <div style={PANEL_CONTAINER_STYLE}>
+      {/* 패널 컨테이너 */}
+      <div className="flex flex-wrap gap-1 p-2 bg-[var(--color-cad-bg-tertiary)] border-b border-[var(--color-cad-border)]">
         {currentTab.panels.map((panel) => (
-          <div key={panel.id} style={PANEL_STYLE}>
-            <div style={PANEL_TITLE_STYLE}>{panel.title}</div>
-            <div style={TOOL_GRID_STYLE}>
+          <div
+            key={panel.id}
+            className="flex flex-col gap-1 p-2 bg-[var(--color-cad-bg-secondary)] rounded-lg min-w-[80px]"
+          >
+            <div className="text-[9px] uppercase tracking-wider text-[var(--color-cad-text-dim)] text-center mb-1">
+              {panel.title}
+            </div>
+            <div className="flex flex-wrap gap-1 justify-center">
               {panel.tools.map((tool) => {
                 const isActive = tool.id === activeTool;
                 const isHovered = hoveredTool === tool.id;
+                const IconComponent = ICON_MAP[tool.iconName];
+
                 return (
                   <div
                     key={tool.id}
-                    style={{ position: "relative" }}
+                    className="relative"
                     onMouseEnter={() => setHoveredTool(tool.id)}
                     onMouseLeave={() => setHoveredTool(null)}
                   >
                     <button
-                      style={
-                        isActive
-                          ? TOOL_BTN_ACTIVE
-                          : isHovered
-                            ? TOOL_BTN_HOVER
-                            : TOOL_BTN_STYLE
-                      }
+                      className={`w-8 h-8 flex items-center justify-center rounded-md border transition-all duration-200 ${isActive
+                        ? "bg-[var(--color-cad-accent)] border-[var(--color-cad-accent-hover)] text-white shadow-sm"
+                        : isHovered
+                          ? "bg-[var(--color-cad-button-hover)] border-[var(--color-cad-border)] text-[var(--color-cad-text)]"
+                          : "bg-transparent border-transparent text-[var(--color-cad-text-dim)] hover:text-[var(--color-cad-text)]"
+                        }`}
                       onClick={() => handleToolClick(tool.id)}
-                      title={`${tool.label}${tool.shortcut ? ` (${tool.shortcut})` : ""}`}
+                      aria-label={`${tool.label}${tool.shortcut ? ` (${tool.shortcut})` : ""}`}
                     >
-                      {tool.icon}
+                      {IconComponent && <HugeiconsIcon icon={IconComponent} size={18} />}
                     </button>
                     {isHovered && (
-                      <div style={TOOLBTN_TOOLTIP}>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-[var(--color-cad-bg)] border border-[var(--color-cad-border)] rounded-md text-[10px] text-[var(--color-cad-text)] whitespace-nowrap shadow-lg z-50 pointer-events-none">
                         {tool.label}
                         {tool.shortcut && (
-                          <span style={{ color: "#888", marginLeft: "4px" }}>
+                          <span className="ml-2 text-[var(--color-cad-text-dim)]">
                             {tool.shortcut}
                           </span>
                         )}
@@ -388,323 +307,3 @@ export function RibbonToolbar({
   );
 }
 
-function SelectIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path
-        d="M3 2L3 14L7 10L10 14L12 12L9 8L14 8L3 2Z"
-        fill="#e0e0e0"
-        stroke="#e0e0e0"
-        strokeWidth="1"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function LineIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <line
-        x1="3"
-        y1="15"
-        x2="15"
-        y2="3"
-        stroke="#e0e0e0"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <circle cx="3" cy="15" r="2" fill="#e0e0e0" />
-      <circle cx="15" cy="3" r="2" fill="#e0e0e0" />
-    </svg>
-  );
-}
-
-function PolylineIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <polyline
-        points="3,15 7,9 11,12 15,3"
-        stroke="#e0e0e0"
-        strokeWidth="2"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <circle cx="3" cy="15" r="1.5" fill="#e0e0e0" />
-      <circle cx="7" cy="9" r="1.5" fill="#e0e0e0" />
-      <circle cx="11" cy="12" r="1.5" fill="#e0e0e0" />
-      <circle cx="15" cy="3" r="1.5" fill="#e0e0e0" />
-    </svg>
-  );
-}
-
-function CircleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <circle
-        cx="9"
-        cy="9"
-        r="6"
-        stroke="#e0e0e0"
-        strokeWidth="2"
-        fill="none"
-      />
-      <line x1="9" y1="3" x2="9" y2="6" stroke="#e0e0e0" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
-function ArcIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path
-        d="M3 14 A8 8 0 0 1 15 6"
-        stroke="#e0e0e0"
-        strokeWidth="2"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <line x1="3" y1="14" x2="5" y2="12" stroke="#e0e0e0" strokeWidth="1.5" />
-      <line x1="15" y1="6" x2="13" y2="8" stroke="#e0e0e0" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
-function TextIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <text
-        x="4"
-        y="14"
-        fill="#e0e0e0"
-        fontSize="12"
-        fontFamily="Arial"
-        fontWeight="bold"
-      >
-        A
-      </text>
-      <line x1="3" y1="16" x2="15" y2="16" stroke="#e0e0e0" strokeWidth="1" />
-    </svg>
-  );
-}
-
-function PointIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <circle cx="9" cy="9" r="3" fill="#e0e0e0" />
-      <line x1="9" y1="2" x2="9" y2="5" stroke="#e0e0e0" strokeWidth="1" />
-      <line x1="9" y1="13" x2="9" y2="16" stroke="#e0e0e0" strokeWidth="1" />
-      <line x1="2" y1="9" x2="5" y2="9" stroke="#e0e0e0" strokeWidth="1" />
-      <line x1="13" y1="9" x2="16" y2="9" stroke="#e0e0e0" strokeWidth="1" />
-    </svg>
-  );
-}
-
-function MoveIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path
-        d="M9 2L9 16M2 9L16 9"
-        stroke="#e0e0e0"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M5 5L9 2L13 5M5 13L9 16L13 13"
-        stroke="#e0e0e0"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function RotateIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path
-        d="M14 9C14 12.3137 11.3137 15 8 15C4.68629 15 2 12.3137 2 9C2 5.68629 4.68629 3 8 3"
-        stroke="#e0e0e0"
-        strokeWidth="2"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <path
-        d="M6 3L8 6L11 4"
-        stroke="#e0e0e0"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ScaleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <rect
-        x="3"
-        y="3"
-        width="5"
-        height="5"
-        stroke="#e0e0e0"
-        strokeWidth="1.5"
-        fill="none"
-      />
-      <rect
-        x="10"
-        y="10"
-        width="5"
-        height="5"
-        stroke="#e0e0e0"
-        strokeWidth="1.5"
-        fill="none"
-      />
-      <line
-        x1="8"
-        y1="5.5"
-        x2="10"
-        y2="5.5"
-        stroke="#e0e0e0"
-        strokeWidth="1.5"
-      />
-      <line
-        x1="8"
-        y1="12.5"
-        x2="10"
-        y2="12.5"
-        stroke="#e0e0e0"
-        strokeWidth="1.5"
-      />
-      <line
-        x1="5.5"
-        y1="8"
-        x2="5.5"
-        y2="10"
-        stroke="#e0e0e0"
-        strokeWidth="1.5"
-      />
-      <line
-        x1="12.5"
-        y1="8"
-        x2="12.5"
-        y2="10"
-        stroke="#e0e0e0"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M6 8L9 11L12 8"
-        stroke="#e0e0e0"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function DimensionIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <line x1="3" y1="14" x2="15" y2="14" stroke="#e0e0e0" strokeWidth="1.5" />
-      <line x1="3" y1="10" x2="3" y2="16" stroke="#e0e0e0" strokeWidth="1.5" />
-      <line
-        x1="15"
-        y1="10"
-        x2="15"
-        y2="16"
-        stroke="#e0e0e0"
-        strokeWidth="1.5"
-      />
-      <line
-        x1="3"
-        y1="12"
-        x2="15"
-        y2="12"
-        stroke="#e0e0e0"
-        strokeWidth="1"
-        strokeDasharray="2 1"
-      />
-    </svg>
-  );
-}
-
-function SnapMiniIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-      <circle
-        cx="5"
-        cy="5"
-        r="2"
-        stroke="currentColor"
-        strokeWidth="1"
-        fill="none"
-      />
-    </svg>
-  );
-}
-
-function GridMiniIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-      <line
-        x1="0"
-        y1="3"
-        x2="10"
-        y2="3"
-        stroke="currentColor"
-        strokeWidth="0.5"
-      />
-      <line
-        x1="0"
-        y1="7"
-        x2="10"
-        y2="7"
-        stroke="currentColor"
-        strokeWidth="0.5"
-      />
-      <line
-        x1="3"
-        y1="0"
-        x2="3"
-        y2="10"
-        stroke="currentColor"
-        strokeWidth="0.5"
-      />
-      <line
-        x1="7"
-        y1="0"
-        x2="7"
-        y2="10"
-        stroke="currentColor"
-        strokeWidth="0.5"
-      />
-    </svg>
-  );
-}
-
-function OrthoMiniIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-      <line
-        x1="5"
-        y1="0"
-        x2="5"
-        y2="10"
-        stroke="currentColor"
-        strokeWidth="1"
-      />
-      <line
-        x1="0"
-        y1="5"
-        x2="10"
-        y2="5"
-        stroke="currentColor"
-        strokeWidth="1"
-      />
-    </svg>
-  );
-}

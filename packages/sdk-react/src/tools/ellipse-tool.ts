@@ -328,7 +328,7 @@ export function renderEllipse(
   ctx.rotate(rotationRad);
 
   ctx.strokeStyle = entity.color ?? "#333333";
-  ctx.lineWidth = (entity.lineWidth ?? 1) * viewport.zoom;
+  ctx.lineWidth = ((entity as any).lineWidth ?? 1) * viewport.zoom;
   ctx.beginPath();
   ctx.ellipse(0, 0, majorRadiusScreen, minorRadiusScreen, 0, 0, Math.PI * 2);
   ctx.stroke();

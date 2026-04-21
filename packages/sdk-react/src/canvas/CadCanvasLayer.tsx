@@ -46,7 +46,7 @@ export interface CadCanvasLayerProps {
   onSelectionBoxEnd?: (
     worldStart: Point,
     worldEnd: Point,
-    modifiers?: { shift?: boolean },
+    modifiers?: { shift?: boolean; mode?: "window" | "crossing" },
   ) => void;
   /**
    * 드래그 모드 결정.
@@ -122,9 +122,11 @@ export function CadCanvasLayer({
     start: Point;
     end: Point;
     shift: boolean;
+    mode: "window" | "crossing";
   } | null>(null);
 
   const snapEngine = useRef(createSnapEngine());
+  const suppressNextClickRef = useRef(false);
 
   const screenToWorld = useCallback(
     (screenPoint: Point): Point => {
@@ -171,11 +173,12 @@ export function CadCanvasLayer({
       const maxX = Math.max(startScreen.x, endScreen.x);
       const maxY = Math.max(startScreen.y, endScreen.y);
 
-      ctx.strokeStyle = "#0078d4";
+      const isCrossing = selectionBox.mode === "crossing";
+      ctx.strokeStyle = isCrossing ? "#00ff00" : "#0078d4";
       ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
+      ctx.setLineDash(isCrossing ? [6, 4] : []);
       ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
-      ctx.fillStyle = "#0078d420";
+      ctx.fillStyle = isCrossing ? "#00ff0020" : "#0078d420";
       ctx.fillRect(minX, minY, maxX - minX, maxY - minY);
       ctx.setLineDash([]);
     }
@@ -247,6 +250,10 @@ export function CadCanvasLayer({
 
     // Click handler — reads fresh rect inside the handler
     const handleClick = (e: MouseEvent) => {
+      if (suppressNextClickRef.current) {
+        suppressNextClickRef.current = false;
+        return;
+      }
       const rect = wrapper.getBoundingClientRect();
       const screenPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       const worldPos = screenToWorld(screenPoint);
@@ -255,6 +262,10 @@ export function CadCanvasLayer({
 
     // Double-click handler for polyline close
     const handleDoubleClick = (e: MouseEvent) => {
+      if (suppressNextClickRef.current) {
+        suppressNextClickRef.current = false;
+        return;
+      }
       const rect = wrapper.getBoundingClientRect();
       const screenPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       const worldPos = screenToWorld(screenPoint);
@@ -302,7 +313,12 @@ export function CadCanvasLayer({
       const startY = e.clientY - rect0.top;
       const startWorld = screenToWorld({ x: startX, y: startY });
       let dragStarted = false;
-      let pendingSelectionBox: { start: Point; end: Point; shift: boolean } | null = null;
+      let pendingSelectionBox: {
+        start: Point;
+        end: Point;
+        shift: boolean;
+        mode: "window" | "crossing";
+      } | null = null;
       const dragMode = getDragMode?.(startWorld, {
         shift: e.shiftKey,
         ctrl: e.ctrlKey,
@@ -316,12 +332,16 @@ export function CadCanvasLayer({
         if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
           if (!dragStarted) {
             dragStarted = true;
+            suppressNextClickRef.current = true;
             // Start selection box (optional)
             if (dragMode === "selectionBox") {
+              const mode: "window" | "crossing" =
+                dx >= 0 ? "window" : "crossing";
               pendingSelectionBox = {
                 start: startWorld,
                 end: startWorld,
                 shift: moveEvent.shiftKey,
+                mode,
               };
             }
           }
@@ -333,9 +353,12 @@ export function CadCanvasLayer({
           const currentWorld = screenToWorld(currentScreen);
 
           if (dragMode === "selectionBox") {
+            const mode: "window" | "crossing" =
+              currentWorld.x >= startWorld.x ? "window" : "crossing";
             pendingSelectionBox = pendingSelectionBox
               ? { ...pendingSelectionBox, end: currentWorld }
               : null;
+            if (pendingSelectionBox) pendingSelectionBox.mode = mode;
             setSelectionBox(pendingSelectionBox);
           }
 
@@ -373,6 +396,7 @@ export function CadCanvasLayer({
         if (pendingSelectionBox) {
           onSelectionBoxEnd?.(pendingSelectionBox.start, endWorld, {
             shift: pendingSelectionBox.shift,
+            mode: pendingSelectionBox.mode,
           });
         }
         pendingSelectionBox = null;

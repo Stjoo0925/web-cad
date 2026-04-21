@@ -9,6 +9,23 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Copy,
+  Cut,
+  Clipboard,
+  X,
+  Info,
+  Move,
+  RefreshCw,
+  Scale,
+  CancelCircleIcon,
+  Maximize,
+  Maximize2,
+  Magnet,
+  Grid,
+  Square,
+} from "@hugeicons/core-free-icons";
 
 export interface ContextMenuItem {
   id: string;
@@ -104,35 +121,35 @@ const CANVAS_MENU_ITEMS: ContextMenuItem[] = [
     id: "paste",
     label: "Paste",
     shortcut: "Ctrl+V",
-    icon: <PasteIcon />,
+    icon: <HugeiconsIcon icon={Clipboard} size={14} />,
   },
   { id: "divider1", label: "", divider: true },
   {
     id: "zoom-extents",
     label: "Zoom Extents",
     shortcut: "Ctrl+E",
-    icon: <ZoomExtentsIcon />,
+    icon: <HugeiconsIcon icon={Maximize} size={14} />,
   },
   {
     id: "zoom-fit",
     label: "Zoom Fit",
-    icon: <ZoomFitIcon />,
+    icon: <HugeiconsIcon icon={Maximize2} size={14} />,
   },
   { id: "divider2", label: "", divider: true },
   {
     id: "toggle-snap",
     label: "Snap Mode",
-    icon: <SnapIcon />,
+    icon: <HugeiconsIcon icon={Magnet} size={14} />,
   },
   {
     id: "toggle-grid",
     label: "Grid Display",
-    icon: <GridIcon />,
+    icon: <HugeiconsIcon icon={Grid} size={14} />,
   },
   {
     id: "toggle-ortho",
     label: "Ortho Mode",
-    icon: <OrthoIcon />,
+    icon: <HugeiconsIcon icon={Square} size={14} />,
   },
 ];
 
@@ -144,52 +161,52 @@ const ENTITY_MENU_ITEMS: ContextMenuItem[] = [
     id: "properties",
     label: "Properties",
     shortcut: "Ctrl+I",
-    icon: <PropertiesIcon />,
+    icon: <HugeiconsIcon icon={Info} size={14} />,
   },
   { id: "divider1", label: "", divider: true },
   {
     id: "copy",
     label: "Copy",
     shortcut: "Ctrl+C",
-    icon: <CopyIcon />,
+    icon: <HugeiconsIcon icon={Copy} size={14} />,
   },
   {
     id: "cut",
     label: "Cut",
     shortcut: "Ctrl+X",
-    icon: <CutIcon />,
+    icon: <HugeiconsIcon icon={Cut} size={14} />,
   },
   {
     id: "paste",
     label: "Paste",
     shortcut: "Ctrl+V",
-    icon: <PasteIcon />,
+    icon: <HugeiconsIcon icon={Clipboard} size={14} />,
   },
   { id: "divider2", label: "", divider: true },
   {
     id: "delete",
     label: "Delete",
     shortcut: "Del",
-    icon: <DeleteIcon />,
+    icon: <HugeiconsIcon icon={X} size={14} />,
   },
   { id: "divider3", label: "", divider: true },
   {
     id: "move",
     label: "Move",
     shortcut: "M",
-    icon: <MoveIcon />,
+    icon: <HugeiconsIcon icon={Move} size={14} />,
   },
   {
     id: "rotate",
     label: "Rotate",
     shortcut: "RO",
-    icon: <RotateIcon />,
+    icon: <HugeiconsIcon icon={RefreshCw} size={14} />,
   },
   {
     id: "scale",
     label: "Scale",
     shortcut: "SC",
-    icon: <ScaleIcon />,
+    icon: <HugeiconsIcon icon={Scale} size={14} />,
   },
 ];
 
@@ -201,19 +218,19 @@ const GRIP_MENU_ITEMS: ContextMenuItem[] = [
     id: "grip-copy",
     label: "Copy",
     shortcut: "Shift+Drag",
-    icon: <CopyIcon />,
+    icon: <HugeiconsIcon icon={Copy} size={14} />,
   },
   {
     id: "grip-stretch",
     label: "Stretch",
-    icon: <StretchIcon />,
+    icon: <HugeiconsIcon icon={Scale} size={14} />,
   },
   { id: "divider1", label: "", divider: true },
   {
     id: "grip-cancel",
     label: "Cancel",
     shortcut: "Esc",
-    icon: <CancelIcon />,
+    icon: <HugeiconsIcon icon={CancelCircleIcon} size={14} />,
   },
 ];
 
@@ -347,302 +364,6 @@ export function ContextMenu({
         );
       })}
     </div>
-  );
-}
-
-// Icon components (simple SVG icons)
-function CopyIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <rect
-        x="4"
-        y="4"
-        width="8"
-        height="8"
-        rx="1"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M2 10V2H10"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function CutIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <path
-        d="M3 1L11 7L3 13"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <line
-        x1="1"
-        y1="5"
-        x2="3"
-        y2="7"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function PasteIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <rect
-        x="2"
-        y="2"
-        width="10"
-        height="10"
-        rx="1"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M5 2V4H9V2"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function DeleteIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <path
-        d="M3 3L11 11M3 11L11 3"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function PropertiesIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <circle
-        cx="7"
-        cy="7"
-        r="5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <circle cx="7" cy="7" r="2" fill="currentColor" />
-    </svg>
-  );
-}
-
-function MoveIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <path
-        d="M7 1V13M1 7H13M4 4L7 1L10 4M4 10L7 13L10 10M4 4L4 10M10 4L10 10"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function RotateIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <path
-        d="M11 7C11 9.76142 8.76142 12 6 12C3.23858 12 1 9.76142 1 7C1 4.23858 3.23858 2 6 2"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M9 2L11 4L13 2"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ScaleIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <rect
-        x="1"
-        y="1"
-        width="4"
-        height="4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <rect
-        x="9"
-        y="9"
-        width="4"
-        height="4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M5 3H9M3 5V9M9 5V9M5 11H9"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function StretchIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <path
-        d="M2 7H12M7 2V12"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M4 4L2 7L4 10M10 4L12 7L10 10"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function CancelIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <circle
-        cx="7"
-        cy="7"
-        r="5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M5 5L9 9M9 5L5 9"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function ZoomExtentsIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <rect
-        x="2"
-        y="2"
-        width="10"
-        height="10"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M5 2V4M9 2V4M5 10V12M9 10V12M2 5H4M2 9H4M10 5H12M10 9H12"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function ZoomFitIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <path
-        d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function SnapIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <circle
-        cx="7"
-        cy="7"
-        r="3"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M7 1V4M7 10V13M1 7H4M10 7H13"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function GridIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <path
-        d="M1 5H13M1 9H13M5 1V13M9 1V13"
-        stroke="currentColor"
-        strokeWidth="1"
-      />
-    </svg>
-  );
-}
-
-function OrthoIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <path
-        d="M1 7H13M7 1V13"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
   );
 }
 

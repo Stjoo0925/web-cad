@@ -8,6 +8,8 @@
  * - Delete for entity deletion
  */
 
+import { getCommandRegistry } from "../commands/command-registry.js";
+
 export interface KeyboardShortcutOptions {
   onCopy?: () => void;
   onPaste?: () => void;
@@ -37,7 +39,8 @@ export interface ShortcutHandler {
 }
 
 /**
- * Command aliases (AutoCAD-style)
+ * Command aliases (AutoCAD-style) - legacy compatibility
+ * CommandRegistry handles alias resolution internally
  */
 export const COMMAND_ALIASES: Record<string, string> = {
   L: "LINE",
@@ -321,9 +324,10 @@ export function createKeyboardShortcuts(
 }
 
 /**
- * Get command from alias or direct input
+ * Get command from alias or direct input using CommandRegistry
  */
 export function resolveCommand(input: string): string {
-  const upper = input.toUpperCase().trim();
-  return COMMAND_ALIASES[upper] ?? upper;
+  const registry = getCommandRegistry();
+  const resolved = registry.resolve(input);
+  return resolved?.name ?? input.toUpperCase().trim();
 }

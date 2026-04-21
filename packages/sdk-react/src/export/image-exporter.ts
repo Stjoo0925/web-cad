@@ -182,13 +182,13 @@ export function exportToSVG(
         if (entity.center && entity.majorAxisEndpoint) {
           const rx = entity.majorAxisRatio
             ? Math.hypot(
-              entity.majorAxisEndpoint.x - entity.center.x,
-              entity.majorAxisEndpoint.y - entity.center.y,
-            ) * entity.majorAxisRatio
+                entity.majorAxisEndpoint.x - entity.center.x,
+                entity.majorAxisEndpoint.y - entity.center.y,
+              ) * entity.majorAxisRatio
             : Math.hypot(
-              entity.majorAxisEndpoint.x - entity.center.x,
-              entity.majorAxisEndpoint.y - entity.center.y,
-            );
+                entity.majorAxisEndpoint.x - entity.center.x,
+                entity.majorAxisEndpoint.y - entity.center.y,
+              );
           const ry = rx * (entity.majorAxisRatio ?? 0.5);
           const rotation = entity.rotation ?? 0;
           svg += `  <ellipse cx="${entity.center.x}" cy="${entity.center.y}" rx="${rx}" ry="${ry}" stroke="${color}" stroke-width="${strokeWidth}" fill="none" transform="rotate(${rotation} ${entity.center.x} ${entity.center.y})" opacity="${opacity}"/>\n`;

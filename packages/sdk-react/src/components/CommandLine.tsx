@@ -1,4 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import { getCommandRegistry } from "../commands/command-registry.js";
+import type { CommandDefinition } from "../commands/command-registry.js";
 
 export interface CommandHistoryItem {
   command: string;
@@ -6,22 +8,17 @@ export interface CommandHistoryItem {
   success: boolean;
 }
 
-export interface CommandOption {
-  name: string;
-  description: string;
-  aliases?: string[];
-}
-
 interface CommandLineProps {
   onCommand?: (command: string, args: string[]) => void;
   onEscape?: () => void;
   history?: string[];
-  commands?: CommandOption[];
+  commands?: CommandDefinition[];
   maxHistorySize?: number;
 }
 
 /**
  * Command aliases (AutoCAD-style)
+ * Kept for backward compatibility with resolveCommandAlias function
  */
 const COMMAND_ALIASES: Record<string, string> = {
   L: "LINE",
@@ -74,57 +71,8 @@ const COMMAND_ALIASES: Record<string, string> = {
   "?": "HELP",
 };
 
-const DEFAULT_COMMANDS: CommandOption[] = [
-  { name: "LINE", description: "Draw a line", aliases: ["L"] },
-  { name: "CIRCLE", description: "Draw a circle", aliases: ["C"] },
-  { name: "ARC", description: "Draw an arc", aliases: ["A"] },
-  { name: "POLYLINE", description: "Draw a polyline", aliases: ["PL"] },
-  { name: "ELLIPSE", description: "Draw an ellipse", aliases: ["EL"] },
-  { name: "RECTANGLE", description: "Draw a rectangle", aliases: ["REC"] },
-  { name: "HATCH", description: "Fill enclosed area", aliases: ["H"] },
-  { name: "DIMENSION", description: "Add dimension", aliases: ["DIM"] },
-  { name: "TEXT", description: "Single line text", aliases: ["T"] },
-  { name: "MTEXT", description: "Multiline text", aliases: ["MT"] },
-  { name: "BLOCK", description: "Create block", aliases: ["B"] },
-  { name: "INSERT", description: "Insert block", aliases: ["I"] },
-  { name: "MOVE", description: "Move entities", aliases: ["M"] },
-  { name: "COPY", description: "Copy entities", aliases: ["CO", "CP"] },
-  { name: "ROTATE", description: "Rotate entities", aliases: ["RO"] },
-  { name: "SCALE", description: "Scale entities", aliases: ["SC"] },
-  { name: "MIRROR", description: "Mirror entities", aliases: ["MI"] },
-  { name: "OFFSET", description: "Offset copy", aliases: ["O"] },
-  { name: "TRIM", description: "Trim entities", aliases: ["TR"] },
-  { name: "EXTEND", description: "Extend entities", aliases: ["EX"] },
-  { name: "FILLET", description: "Fillet corners", aliases: ["F"] },
-  { name: "CHAMFER", description: "Chamfer corners", aliases: ["CHA"] },
-  { name: "STRETCH", description: "Stretch entities", aliases: ["ST"] },
-  { name: "BREAK", description: "Break entities", aliases: ["BR"] },
-  { name: "JOIN", description: "Join entities", aliases: ["J"] },
-  { name: "ARRAY", description: "Array copy", aliases: ["AR"] },
-  { name: "LAYER", description: "Layer management", aliases: ["LA"] },
-  { name: "COLOR", description: "Set color", aliases: ["COL"] },
-  { name: "LINETYPE", description: "Set linetype", aliases: ["LT"] },
-  { name: "LINEWEIGHT", description: "Set lineweight", aliases: ["LW"] },
-  { name: "SNAP", description: "Toggle snap mode", aliases: ["SN"] },
-  { name: "GRID", description: "Toggle grid display", aliases: ["GR"] },
-  { name: "ORTHO", description: "Toggle ortho mode", aliases: ["OR"] },
-  { name: "OSNAP", description: "Object snap settings", aliases: ["OS"] },
-  { name: "PAN", description: "Pan view", aliases: ["P"] },
-  { name: "ZOOM", description: "Zoom view", aliases: ["Z"] },
-  { name: "REGEN", description: "Regenerate view", aliases: ["RG"] },
-  { name: "UNDO", description: "Undo last command", aliases: ["U"] },
-  { name: "SAVE", description: "Save drawing", aliases: ["QSAVE", "S"] },
-  { name: "OPEN", description: "Open drawing", aliases: ["OP"] },
-  { name: "NEW", description: "New drawing", aliases: ["N"] },
-  { name: "LIST", description: "List entity properties", aliases: ["LI", "LS"] },
-  { name: "DIST", description: "Measure distance", aliases: ["DI"] },
-  { name: "AREA", description: "Calculate area", aliases: [] },
-  { name: "ID", description: "Display point coordinates", aliases: [] },
-  { name: "HELP", description: "Display help", aliases: ["?"] },
-];
-
 /**
- * Resolve alias to command name
+ * Resolve alias to command name (backward compatibility)
  */
 export function resolveCommandAlias(cmd: string): string {
   return COMMAND_ALIASES[cmd.toUpperCase()] ?? cmd.toUpperCase();
@@ -196,20 +144,23 @@ export function CommandLine({
   onCommand,
   onEscape,
   history = [],
-  commands = DEFAULT_COMMANDS,
+  commands,
   maxHistorySize = 100,
 }: CommandLineProps) {
   const [value, setValue] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
-  const [filteredCommands, setFilteredCommands] = useState<CommandOption[]>([]);
+  const [filteredCommands, setFilteredCommands] = useState<CommandDefinition[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Use registry commands if none provided
+  const registryCommands = commands ?? getCommandRegistry().getAll();
+
   useEffect(() => {
     if (value.length > 0) {
       const upper = value.toUpperCase();
-      const filtered = commands.filter(
+      const filtered = registryCommands.filter(
         (cmd) =>
           cmd.name.includes(upper) ||
           (cmd.aliases && cmd.aliases.some((a) => a.includes(upper))),
@@ -220,7 +171,7 @@ export function CommandLine({
     } else {
       setShowDropdown(false);
     }
-  }, [value, commands]);
+  }, [value, registryCommands]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -267,7 +218,7 @@ export function CommandLine({
   );
 
   const handleDropdownClick = useCallback(
-    (cmd: CommandOption) => {
+    (cmd: CommandDefinition) => {
       setValue(cmd.name);
       setShowDropdown(false);
       inputRef.current?.focus();

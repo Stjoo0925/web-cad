@@ -1,101 +1,140 @@
 {
-  "version": "5.0",
+  "version": "1.0",
   "stories": [
     {
-      "id": "US-501",
-      "description": "Undo/Redo system - Ctrl+Z undo, Ctrl+Y redo",
+      "id": "DXF-001",
+      "description": "DXF SDK importer stub 수정 - core parseDxf 연결",
       "priority": 1,
       "passes": true,
       "acceptanceCriteria": [
-        "엔티티 생성/수정/삭제 시 히스토리 기록",
-        "Ctrl+Z로 실행취소",
-        "Ctrl+Y 또는 Ctrl+Shift+Z로 다시실행",
-        "히스토리 스택 제한 (50단계)"
+        "parseDxfString() 함수가 [] 반환 대신 실제 DXF 파싱 수행",
+        "core parseDxf 함수를 호출하여 entities 배열 반환",
+        "파싱 경고(warnings)가 반환값에 포함됨",
+        "알 수 없는 entity type이 warnings에 기록됨 (silent drop 금지)"
       ],
       "files": [
-        "packages/sdk-react/src/state/editor-store.ts",
-        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+        "packages/sdk-react/src/import/dxf-importer.ts"
       ],
-      "verification": "작업 취소 후 다시 실행 가능"
+      "verification": "유효한 DXF 파일 입력 시 empty array 아닌 실제 entities 반환"
     },
     {
-      "id": "US-502",
-      "description": "Delete key - delete selected entities",
+      "id": "DXF-002",
+      "description": "LWPOLYLINE vertex 파싱 버그 수정 - accumulator 패턴 적용",
       "priority": 2,
       "passes": true,
       "acceptanceCriteria": [
-        "Delete 키로 선택된 엔티티 삭제",
-        "Delete 버튼/아이콘도 동일 동작",
-        "삭제 전 확인 없음 (즉시 삭제)"
+        "group code 10(X), 20(Y), 30(Z) 좌표가 독립적으로 버퍼링됨",
+        "X가 2번 연속出現 시 첫 번째 값 덮어써지지만 마지막 vertex에 y=0 들어가지 않음",
+        "100개 이상 vertex 가진 LWPOLYLINE도 정확히 파싱됨",
+        "LWPOLYLINE round-trip 테스트에서 모든 vertex 좌표 ±1e-6 이내 일치"
       ],
       "files": [
-        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+        "packages/core/src/documents/dxf-parser.ts"
       ],
-      "verification": "선택된 엔티티 Delete 키로 삭제됨"
+      "verification": "LWPOLYLINE entity 100개 이상 vertex 포함 시 round-trip 정밀도 검증"
     },
     {
-      "id": "US-503",
-      "description": "Keyboard shortcuts - tool switching shortcuts",
+      "id": "DXF-003",
+      "description": "MTEXT entity round-trip 완성 - export와 import 양방향",
       "priority": 3,
       "passes": true,
       "acceptanceCriteria": [
-        "S = Select, L = Line, C = Circle, A = Arc, P = Polyline",
-        "M = Move, RO = Rotate, SC = Scale, O = Offset",
-        "ESC = Cancel current operation / Deselect",
-        "Delete = Delete selected"
+        "MTEXT entity 파싱 시 text content, height, rotation, width 보존",
+        "MTEXT export 시 group code 1(text), 3(multi-line), 40(height), 41(width), 50(rotation) 모두 출력",
+        "MTEXT round-trip 시 text 내용 完全一致",
+        "multi-line MTEXT (group code 3含む) 파싱됨"
       ],
       "files": [
-        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+        "packages/core/src/documents/dxf-parser.ts",
+        "packages/core/src/documents/entity-registry.ts",
+        "packages/sdk-react/src/export/dxf-exporter.ts"
       ],
-      "verification": "단축키로 도구 전환됨"
+      "verification": "MTEXT with multi-line content round-trip 후 text 보존 검증"
     },
     {
-      "id": "US-504",
-      "description": "Snap settings panel - endpoint/midpoint/center toggles",
+      "id": "DXF-004",
+      "description": "entity-registry.ts 와 dxf-parser.ts 연동 - registry 기반 파싱",
       "priority": 4,
       "passes": true,
       "acceptanceCriteria": [
-        "스냅 타입별 토글 버튼 UI",
-        "Endpoint, Midpoint, Intersection, Center, Perpendicular, Tangent",
-        "설정이 스냅 엔진에 적용됨"
+        "dxf-parser.ts가 entity-registry.ts의 parseEntity() 사용",
+        "16개 entity type 전체에 대해 group code mapping 적용",
+        "standardMappings에 MTEXT, ELLIPSE, SPLINE, HATCH, DIMENSION mapping 추가",
+        "신규 entity type 추가 시 registry에만 등록하면 파싱 자동 적용"
       ],
       "files": [
-        "packages/sdk-react/src/components/SnapSettings.tsx",
-        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+        "packages/core/src/documents/dxf-parser.ts",
+        "packages/core/src/documents/entity-registry.ts"
       ],
-      "verification": "각 스냅 타입 개별적으로 켜고 끄기 가능"
+      "verification": "registry에 정의된 16개 entity type 모두 파싱 가능"
     },
     {
-      "id": "US-505",
-      "description": "Distance/area measurement tool",
+      "id": "DXF-005",
+      "description": "ELLIPSE, SPLINE, HATCH, DIMENSION entity 지원 추가",
       "priority": 5,
       "passes": true,
       "acceptanceCriteria": [
-        "DI 命令 또는 Measure 툴로 거리 측정",
-        "엔티티 클릭하여 길이/면적 표시",
-        "결과를 화면에 오버레이로 표시"
+        "ELLIPSE: center, majorAxisEndpoint, minorAxisRatio, rotation 모두 보존",
+        "SPLINE: controlVertices, degree, knots 모두 보존",
+        "HATCH: pattern, scale, rotation, boundaryVertices 보존",
+        "DIMENSION: dimensionType, text, definition point 보존",
+        "DIMENSION text content round-trip 시 보존"
       ],
       "files": [
-        "packages/sdk-react/src/tools/measure-tool.ts",
-        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+        "packages/core/src/documents/entity-registry.ts",
+        "packages/sdk-react/src/export/dxf-exporter.ts"
       ],
-      "verification": "선택한 엔티티의 길이/면적이 표시됨"
+      "verification": "ELLIPSE, SPLINE, HATCH, DIMENSION 개별 round-trip 테스트 통과"
     },
     {
-      "id": "US-506",
-      "description": "Grid spacing settings - adjustable grid size",
+      "id": "DXF-006",
+      "description": "Precision 보장 - 좌표값 6자리 이상 보존",
       "priority": 6,
       "passes": true,
       "acceptanceCriteria": [
-        "그리드 크기 설정 (10, 50, 100 등)",
-        "설정 패널 또는 줌 레벨 자동 조정",
-        "현재 그리드 크기 표시"
+        "formatNumber() 함수 6자리 이상 정밀도 유지",
+        "toFixed(6) 사용 시 trailing zeros 제거해도 값의 정밀도 유지",
+        "round-trip 시 모든 좌표값 ±1e-6 이내 일치",
+        "각도 값(startAngle, endAngle) ±1e-4 이내 일치"
       ],
       "files": [
-        "packages/sdk-react/src/canvas/cad-canvas-renderer.ts",
-        "packages/sdk-react/src/CadPointCloudEditor.tsx"
+        "packages/sdk-react/src/export/dxf-exporter.ts",
+        "packages/core/src/documents/entity-registry.ts"
       ],
-      "verification": "그리드 크기 변경 시 캔버스에 반영됨"
+      "verification": "123.456789 좌표값 round-trip 후 123.456789 (±1e-6) 확인"
+    },
+    {
+      "id": "DXF-007",
+      "description": "BLOCK/INSERT 참조 시스템 round-trip",
+      "priority": 7,
+      "passes": true,
+      "acceptanceCriteria": [
+        "BLOCK 정의와 INSERT 참조가 모두 보존됨",
+        "nested BLOCK (BLOCK 안의 INSERT) 참조 보존",
+        "blockName, blockPosition, blockRotation, blockScale 모두 보존",
+        "BLOCK 정의 없이 INSERT 참조 시 오류 아님 (passthrough)"
+      ],
+      "files": [
+        "packages/core/src/documents/entity-registry.ts",
+        "packages/sdk-react/src/export/dxf-exporter.ts"
+      ],
+      "verification": "BLOCK with nested INSERT round-trip 후 구조 보존 검증"
+    },
+    {
+      "id": "DXF-008",
+      "description": "DXF round-trip 테스트 스위트 작성",
+      "priority": 8,
+      "passes": true,
+      "acceptanceCriteria": [
+        "16개 entity type 각각에 round-trip 테스트 존재",
+        "각 테스트는 tolerance ±1e-6 (좌표), ±1e-4 (각도) 정의",
+        "테스트 실패 시 어떤 field가 일치하지 않는지 명시",
+        "모든 테스트 통과해야만 story 완료로 인정"
+      ],
+      "files": [
+        "tests/dxf-roundtrip.test.ts"
+      ],
+      "verification": "npm test 실행 시 모든 dxf-roundtrip 테스트 통과"
     }
   ]
 }

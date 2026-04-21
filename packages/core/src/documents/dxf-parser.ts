@@ -57,6 +57,7 @@ function generateEntityId(): string {
 
 function parseEntity(lines: string[], startIndex: number, entityType: string): Entity | null {
   const entity: Entity = { type: entityType, id: generateEntityId() };
+  const vertexAcc: { x?: number; y?: number; z?: number } = {};
   let i = startIndex + 2;
   const endIndex = findEntityEndIndex(lines, i);
 
@@ -137,12 +138,20 @@ function parseEntity(lines: string[], startIndex: number, entityType: string): E
     } else if ((entityType === "LWPOLYLINE" || entityType === "POLYLINE") && groupCode === "70") {
       entity.closed = value === "1";
     } else if ((entityType === "LWPOLYLINE" || entityType === "POLYLINE") && groupCode === "10") {
-      entity.vertices = entity.vertices || [];
-      const x = parseFloat(value);
-      entity.vertices.push({ x, y: 0 });
+      vertexAcc.x = parseFloat(value);
+      if (vertexAcc.y !== undefined) {
+        entity.vertices = entity.vertices || [];
+        entity.vertices.push({ x: vertexAcc.x, y: vertexAcc.y });
+        vertexAcc.x = undefined;
+        vertexAcc.y = undefined;
+      }
     } else if ((entityType === "LWPOLYLINE" || entityType === "POLYLINE") && groupCode === "20") {
-      if (entity.vertices && entity.vertices.length > 0) {
-        entity.vertices[entity.vertices.length - 1].y = parseFloat(value);
+      vertexAcc.y = parseFloat(value);
+      if (vertexAcc.x !== undefined) {
+        entity.vertices = entity.vertices || [];
+        entity.vertices.push({ x: vertexAcc.x, y: vertexAcc.y });
+        vertexAcc.x = undefined;
+        vertexAcc.y = undefined;
       }
     }
 
